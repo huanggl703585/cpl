@@ -1,0 +1,23 @@
+#include "dfa.h"
+#include "re.h"
+int main()
+{
+  re_seq *seq=initreseq(5,5);
+  insertresymbol(seq,5);
+  insertresymbol(seq,6);
+  insertresymbol(seq,5);
+  insertresymbol(seq,6);
+  insertresymbol(seq,6);
+  //travelresymbol(seq->operands);
+  insertreoperator(seq,OR);
+  insertreoperator(seq,STAR);
+  insertreoperator(seq,CAT);
+  insertreoperator(seq,CAT);
+  insertreoperator(seq,CAT);
+
+  expandreseq(seq);
+  re_node *ret=reseqtotree(seq);
+
+  createdfa(ret,12);
+  //travelretree(ret);
+}

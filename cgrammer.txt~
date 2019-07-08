@@ -1,0 +1,135 @@
+start ::= token
+      ::= preprocessing-token
+
+token ::= keyword
+      ::= identifier
+      ::= constant
+      ::= string-literal
+      ::= punctuator
+
+preprocessing-token ::= header-name
+		    ::= identifier
+		    ::= pp-number
+		    ::= character-constant
+		    ::= string-literal
+		    ::= punctuator
+
+keyword ::= auto
+	::= enum
+	::= restrict
+	::= unsigned
+	::= break
+	::= extern
+	::= return
+	::= void
+	::= case
+	::= float
+	::= short
+	::= volatile
+	::= char
+	::= for
+	::= signed
+	::= while
+	::= const
+	::= goto
+	::= sizeof
+	::= _Bool
+	::= continue
+	::= if
+	::= static
+	::= _Complex
+	::= default
+	::= inline
+	::= struct
+	::= _Imaginary
+	::= do
+	::= int
+	::= switch
+	::= double
+	::= long
+	::= typedef
+	::= else
+	::= register
+	::= union	
+
+identifier ::= identifier-nondigit
+	   ::= identifier idetifier-nondigit
+	   ::= identifier digit
+
+identifier-nondigit ::= nondigit
+		    ::= universal-character-name
+		   
+nondigit ::= _
+	 ::= a
+	 ::= b 
+	 ::= c
+	 ::= d
+	 ::= e
+	 ::= f
+	 ::= g
+	 ::= h
+	 ::= i
+	 ::= j
+	 ::= k
+	 ::= l
+	 ::= m
+	 ::= n
+	 ::= o
+	 ::= p
+	 ::= q
+	 ::= r
+	 ::= s
+	 ::= t
+	 ::= u
+	 ::= v
+	 ::= w
+	 ::= x
+	 ::= y
+	 ::= z
+	 ::= A 
+	 ::= B
+	 ::= C
+	 ::= D
+	 ::= E
+	 ::= F
+	 ::= G
+	 ::= H
+	 ::= I
+	 ::= J
+	 ::= K
+	 ::= L
+	 ::= M
+	 ::= N
+	 ::= O
+	 ::= P
+	 ::= Q
+	 ::= R
+	 ::= S
+	 ::= T
+	 ::= U
+	 ::= V
+	 ::= W
+	 ::= X
+	 ::= Y
+	 ::= Z
+	 
+digit ::= 0
+      ::= 1
+      ::= 2
+      ::= 3
+      ::= 4
+      ::= 5
+      ::= 6
+      ::= 7
+      ::= 8
+      ::= 9
+	 
+universal-character-name ::= \u hex-quad
+	 		 ::= \U hex-quad hex-quad
+
+hex-quad ::= hexadecimal-digit hexadecimal-digit
+	 ::= 		   hexadecimal-digit hexadecimal-digit
+
+		       
+	 
+	     

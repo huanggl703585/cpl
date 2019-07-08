@@ -1,0 +1,84 @@
+#ifndef __SYMBOLTABLE_H
+#define __SYMBOLTABLE_H
+
+#include <stdlib.h>
+#include "hash.h"
+
+typedef struct symboltable symboltable;
+struct symboltable{
+  int size;
+  int count;
+  int *hashtable;
+  char **symbolseq;   //symbolseq starts from index 1, because
+                      //hashtable is init to be all zero
+};
+
+#define symbol_table_basic_size 1024
+
+symboltable* createsymboltable(size_t size);
+void insertsymboltable(symboltable* st,char *str);
+int searchsymboltable(symboltable *st,char *str);
+
+
+symboltable *createsymboltable(size_t size)
+{
+  symboltable* ret=(symboltable*)malloc(sizeof(symboltable));
+  ret->size=size;
+  ret->count=0;
+  ret->hashtable=(int*)malloc(size*4*sizeof(int));
+  ret->symbolseq=(char**)malloc(size*sizeof(char*));
+  bzero(ret->hashtable,size*4*sizeof(int));
+  bzero(ret->symbolseq,size*sizeof(char*));
+  return ret;
+}
+
+void _insertsymboltable(symboltable *st,char *str,unsigned int hashvalue)
+{
+  hashvalue=hashvalue % (st->size *4);
+  
+  int index=st->hashtable[hashvalue];
+
+  if(index==0){  //the slot is empty, write it directly
+    int len=strlen(str);
+    char *pt=(char*)malloc(len+1);
+    memcpy(pt,str,len+1);
+    st->symbolseq[++(st->count)]=pt;
+    st->hashtable[hashvalue]=st->count;
+    return ;
+  }
+
+  if(strcmp(str,st->symbolseq[index])==0) //the origin is exists
+    return ;
+   
+  _insertsymboltable(st,str,hashvalue+1);
+}
+
+void insertsymboltable(symboltable* st,char *str)
+{
+  unsigned int hashvalue=strhash(str) % (st->size * 4);
+  _insertsymboltable(st,str,hashvalue);
+}
+
+int _searchsymboltable(symboltable *st,char *str,unsigned int hashvalue)
+{
+  hashvalue=hashvalue % (st->size * 4);
+  
+  int index=st->hashtable[hashvalue];
+  if(index==0) goto symboltablefailfind;
+
+  if(strcmp(str,st->symbolseq[index])==0)
+    return 1;
+
+ symboltablefailfind:
+  hashvalue++;
+  unsigned int origin=strhash(str)%(st->size*4);
+  if(origin==hashvalue) return 0;
+  return _searchsymboltable(st,str,hashvalue);
+}
+
+int searchsymboltable(symboltable *st,char *str)
+{
+  unsigned int hashvalue=strhash(str)%(st->size*4);
+  return _searchsymboltable(st,str,hashvalue);
+}
+#endif

@@ -1,0 +1,13 @@
+#include <stdio.h>
+#include "symboltable.h"
+#include "random.h"
+
+int main()
+{
+  char buf[20];
+  symboltable *st=createsymboltable(symbol_table_base_size);
+  for(int i=0;i<30;i++){
+    sprintf(buf,"%d",i);
+    insertsymboltable(st,buf);
+  }
+}

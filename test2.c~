@@ -1,0 +1,6 @@
+#include "graph.h"
+
+int main()
+{
+  graph *g=initgraph(5);
+}

@@ -1,0 +1,14 @@
+#include <stdio.h>
+#include "strmalloc.h"
+#include "random.h"
+
+int main()
+{
+  int cnt=0;
+  for(int i=0;i<100;i++){
+    int num=getrandomnumber(1,51);
+    char *pt=strmalloc(num);
+    cnt+=num;
+  }
+  printf("%d ",cnt);
+}
