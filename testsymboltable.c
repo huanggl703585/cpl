@@ -9,19 +9,16 @@ int main()
   for(int i=0;i<30;i++){
     bzero(buf,20);
     sprintf(buf,"%d",i);
-    insertsymboltable(st,buf);
+    insertsymboltable(st,buf,NULL);
   }
 
-  for(int i=0;i<4096;i++){
-    int index=st->hashtable[i];
-    if(index==0) continue;
-    printf("%s %d\n",st->symbolseq[index],index);
-  }
-  for(int i=0;i<st->count;i++){
-    printf("%s %d\n",st->symbolseq[i],i);
+  for(int i=0;i<1024;i++){
+    symbolitem *item=st->table[i];
+    if(item==NULL) continue;
+    printf("%s %d\n",item->name,item->id);
   }
 
-  
+  /*
   //int index=st->hashtable[304];
   int index=1;
   printf("\n\n%s %d\n",st->symbolseq[index],index);
@@ -35,5 +32,5 @@ int main()
     //printf("  %s\n",(st->symbolseq)[1]);
     printf("%d ",searchsymboltable(st,buf));
   }
-  
+  */
 }

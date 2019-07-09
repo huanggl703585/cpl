@@ -2,6 +2,7 @@
 #define __LIST_H
 
 #include "utli.h"
+#include <stdio.h>
 
 struct list_head{
   struct list_head *next;
@@ -70,10 +71,39 @@ void listdel(struct list_head *l)
 #define list_next_entry(pos,member)			\
   list_entry((pos)->member.next,typeof(*pos),member)  
 
+//head is a ptr
 #define list_for_each_entry(pos,head,member)	\
   for(pos=list_first_entry(head,typeof(*pos),member);	\
       &pos->member!=(head);				\
       pos=list_next_entry(pos,member))
+
+//IT IS ERROR
+#define list_for_each_entry_withouthead(pos,head,member)	\
+  for(pos=list_entry(head,typeof(*pos),member);			\
+      &pos->member!=(head);					\
+      pos=list_next_entry(pos,member))
+
+#define list_find_key(pos,listhead,member,keymember,target,isequal)	\
+  list_for_each_entry(pos,&(listhead->member),member){			\
+    if(isequal((void*)target,pos->keymember))				\
+      break;								\
+  }
+
+//from small to large
+#define list_cmp_key(pos,head,member,keymember,target,cmp)		\
+  list_for_each_entry(pos,head,member){					\
+    if(cmp(target->keymember,pos->keymember)<0)				\
+      break;								\
+  }									\
+  pos=list_last_entry(&(pos->member),typeof(*pos),member);
+
+//ignore it
+//if &(pos->member)==head, can't find relative key
+
+//listhead is different from list above
+#define list_insert_order(pos,listhead,member,keymember,new,cmp)	\
+  list_cmp_key(pos,&(listhead->member),member,keymember,new,cmp)	\
+  listadd(&(new->member),&(pos->member))
 
 #endif
 

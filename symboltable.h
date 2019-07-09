@@ -2,22 +2,30 @@
 #define __SYMBOLTABLE_H
 
 #include <stdlib.h>
+#include "symbolattr.h"
 #include "hash.h"
 
 typedef struct symboltable symboltable;
+typedef struct symbolitem symbolitem;
+
+struct symbolitem{
+  int id; //id starts from 0
+  char *name;
+  symbolattr *attr;
+};
+
 struct symboltable{
   int size;
   int count;
-  int *hashtable;
-  char **symbolseq;   //symbolseq starts from index 1, because
-                      //hashtable is init to be all zero
+  symbolitem **table;
 };
 
 #define symbol_table_basic_size 1024
 
 symboltable* createsymboltable(size_t size);
-void insertsymboltable(symboltable* st,char *str);
-int searchsymboltable(symboltable *st,char *str);
+int insertsymboltable(symboltable* st,char *str,symbolattr *attr);
+symbolattr* searchsymboltablebyname(symboltable *st,char *str);
+int changesymboltablebyname(symboltable *st,char *str,symbolattr *attr);
 
 
 symboltable *createsymboltable(size_t size)
@@ -25,60 +33,64 @@ symboltable *createsymboltable(size_t size)
   symboltable* ret=(symboltable*)malloc(sizeof(symboltable));
   ret->size=size;
   ret->count=0;
-  ret->hashtable=(int*)malloc(size*4*sizeof(int));
-  ret->symbolseq=(char**)malloc(size*sizeof(char*));
-  bzero(ret->hashtable,size*4*sizeof(int));
-  bzero(ret->symbolseq,size*sizeof(char*));
+  ret->table=(symbolitem**)malloc(sizeof(symbolitem*)*(ret->size));
+  bzero(ret->table,sizeof(symbolitem*)*(ret->size));
   return ret;
 }
 
-void _insertsymboltable(symboltable *st,char *str,unsigned int hashvalue)
+int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
 {
-  hashvalue=hashvalue % (st->size *4);
-  
-  int index=st->hashtable[hashvalue];
+  unsigned int hashvalue = strhash(str)%(st->size);
+  unsigned int head=hashvalue;
+  symbolitem *item=(st->table)[hashvalue];
 
-  if(index==0){  //the slot is empty, write it directly
-    int len=strlen(str);
-    char *pt=(char*)malloc(len+1);
-    memcpy(pt,str,len+1);
-    st->symbolseq[++(st->count)]=pt;
-    st->hashtable[hashvalue]=st->count;
-    return ;
+  while(item!=NULL){
+    hashvalue=(hashvalue+1)%(st->size);
+    item=(st->table)[hashvalue];
+    if(hashvalue==head) // the table is full
+      return 1;
   }
-
-  if(strcmp(str,st->symbolseq[index])==0) //the origin is exists
-    return ;
-   
-  _insertsymboltable(st,str,hashvalue+1);
-}
-
-void insertsymboltable(symboltable* st,char *str)
-{
-  unsigned int hashvalue=strhash(str) % (st->size * 4);
-  _insertsymboltable(st,str,hashvalue);
-}
-
-int _searchsymboltable(symboltable *st,char *str,unsigned int hashvalue)
-{
-  hashvalue=hashvalue % (st->size * 4);
   
-  int index=st->hashtable[hashvalue];
-  if(index==0) goto symboltablefailfind;
-
-  if(strcmp(str,st->symbolseq[index])==0)
-    return 1;
-
- symboltablefailfind:
-  hashvalue++;
-  unsigned int origin=strhash(str)%(st->size*4);
-  if(origin==hashvalue) return 0;
-  return _searchsymboltable(st,str,hashvalue);
+  item=(symbolitem*)malloc(sizeof(symbolitem));
+  int len=strlen(str);
+  char *pt=(char*)malloc(len+1);
+  memcpy(pt,str,len+1);
+  item->name=pt;
+  item->id=((st->count)++);
+  item->attr=attr;
+  st->table[hashvalue]=item;
+  return 0;
 }
 
-int searchsymboltable(symboltable *st,char *str)
+symbolattr* searchsymboltable(symboltable *st,char *str)
 {
-  unsigned int hashvalue=strhash(str)%(st->size*4);
-  return _searchsymboltable(st,str,hashvalue);
+  unsigned int hashvalue = strhash(str)%(st->size);
+  unsigned int head=hashvalue;
+  symbolitem *item=(st->table)[hashvalue];
+  
+  do{
+    if(strcmp(str,item->name)==0)
+      return item->attr;
+    item=(st->table)[++hashvalue];
+  }while(item!=NULL && hashvalue!=head);
+  
+  return NULL;
+}
+
+int changesymboltable(symboltable *st,char *str,symbolattr *attr)
+{
+  unsigned int hashvalue = strhash(str)%(st->size);
+  unsigned int head=hashvalue;
+  symbolitem *item=(st->table)[hashvalue];
+  
+  do{
+    if(strcmp(str,item->name)==0){
+      item->attr=attr;
+      return 0;
+    }
+    item=(st->table)[++hashvalue];
+  }while(item!=NULL && hashvalue!=head);
+  
+  return 1;
 }
 #endif

@@ -6,7 +6,16 @@
 #define min(x,y) ((x)<(y)?(x):(y))
 #define max(x,y) ((x)<(y)?(y):(x))
 
+#define intequal(x,y) ((int)x==(int)y)
+#define intcmp(x,y) ((x>y)?1:((x==y)?0:-1))
+
 #define upperdiv(x,y) (((x)+(y)-1)/(y))
+
+#define keepinterval(minval,maxval,newval) {	\
+    minval=(minval>newval)?newval:minval;	\
+    maxval=(maxval<newval)?newval:maxval;	\
+  }
+  
 
 #define offsetof(TYPE,MEMBER)			\
   ((size_t)&((TYPE*)0)->MEMBER)
