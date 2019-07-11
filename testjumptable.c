@@ -9,6 +9,7 @@ int main()
   jumptableadd(jtable,4,2,3);
   printf("\n");
   printf("%d %d %d %d\n",jumptablefind(jtable,1,3),jumptablefind(jtable,1,2),jumptablefind(jtable,4,2),jumptablefind(jtable,2,3));
-  printf("%d\n",jtable->statecnt);
-  printf("%d\n",getjumpsum(jtable));
+  //printf("%d\n",jtable->statecnt);
+  // printf("%d\n",getjumpsum(jtable));
+  printjumptable(jtable);
 }

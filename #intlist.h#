@@ -1,0 +1,20 @@
+#ifndef __INTLIST_H
+#define __INTLIST_H
+
+#include "list.h"
+
+typedef struct intlist intlist;
+struct intlist{
+  int key;
+  struct list_head list;
+};
+
+intlist *createintlist(int key);
+void insertintlist(intlist* l, int key);
+int compareintlist(intlist *l1,intlist *l2);
+void freeintlist(intlist *l);
+
+
+
+
+#endif

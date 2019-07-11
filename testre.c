@@ -18,6 +18,11 @@ int main()
   expandreseq(seq);
   re_node *ret=reseqtotree(seq);
 
-  createdfa(ret,12);
-  //travelretree(ret);
+  dfa* dfa=createdfa(ret,12);
+  dfa_instance *instance=createdfainstance(dfa);
+  printf("%d ",walkdfa(instance,5));
+  printf("%d ",walkdfa(instance,6));
+  printf("%d ",walkdfa(instance,5));
+  printf("%d ",walkdfa(instance,6));
+  
 }

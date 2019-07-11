@@ -5,7 +5,7 @@
 int main()
 {
   char buf[20];
-  symboltable *st=createsymboltable(symbol_table_basic_size);
+  symboltable *st=createsymboltable(symbol_table_basic_size,ASCII_BIAS);
   for(int i=0;i<30;i++){
     bzero(buf,20);
     sprintf(buf,"%d",i);

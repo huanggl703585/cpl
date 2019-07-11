@@ -21,7 +21,7 @@ void intersectset(set **s1,set *s2)
   while(pt>=0){
     set *cur=arr[pt];
     pt--;
-    printf("%d ",cur->key);
+    //printf("%d ",cur->key);
     //_avltreeinsert(s1,arr[pt]);
     insertset(*s1,cur->key);
     if(cur->left!=NULL)

@@ -1,0 +1,34 @@
+#ifndef __DYNAMICARRAY_H
+#define __DYNAMICARRAY_H
+
+typedef struct darray darray;
+struct darray{
+  int* array;
+  int pt;
+  int size;
+  int factor;
+};
+
+darray* createdarray(int initsize,int factor);
+int insertdarray(darray* arr,int value);
+int finddarray(darray* arr,int index);
+
+darray* createdarray(int initsize,int factor)
+{
+  darray *ret=(darray*)malloc(sizeof(darray));
+  ret->pt=0;
+  ret->initsize=size;
+  ret->factor=factor;
+  ret->array=(int*)malloc(sizeof(int)*initsize);
+}
+
+int insertdarray(darray* arr,int value)
+{
+  if(arr->pt==arr->size){
+    arr->size *= arr->factor;
+    arr->array=realloc(arr->array,sizeof(int)*(arr->size));
+  }
+  ret->array[ret->pt++]=value;
+}
+
+#endif

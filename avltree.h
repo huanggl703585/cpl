@@ -16,6 +16,30 @@ struct avltree{
   node.key=keynum;node.factor=0;			\
   node.parent=node.left=node.right=NULL
 
+//recver is a array
+#define travelavltree(root,recver,maxnum,cnt)		\
+  do{							\
+    int __cnt=0;					\
+    if(root==NULL)					\
+      ;							\
+    else{						\
+      struct avltree *__arr[maxnum];				\
+      __arr[0]=root;						\
+      int __pt=0;						\
+      while(__pt>=0){						\
+	struct avltree *__cur=__arr[__pt--];			\
+	if(++__cnt==maxnum)					\
+	  break;						\
+	arraysortinsert(recver,maxnum,__cur->key);		\
+	if(__cur->left!=NULL)					\
+	  __arr[++__pt]=__cur->left;					\
+	if(__cur->right!=NULL)						\
+	  __arr[++__pt]=__cur->right;					\
+      }									\
+    }									\
+    cnt=__cnt;								\
+  }while(0)							
+
 void avltreeinsert(struct avltree** root,int key);
 void _avltreeinsert(struct avltree** root,struct avltree* new);
 void avltreedelete(struct avltree* root,int key);
@@ -178,6 +202,7 @@ void avltreeprint(struct avltree* root)
     return;
   }
 
+  //TODO: USE A MACRO TO REPLACED THE LENGTH OF ARRAY
   struct avltree *arr[256];
   arr[0]=root;
   int pt=0;
@@ -216,5 +241,21 @@ struct avltree* _avltreefind(struct avltree* root,int key)
   return NULL;
 }
 
+//NO REPEAT ELEMENT!!
+int avltreecmp(struct avltree* t1,struct avltree *t2)
+{
+  int cnt1=0,cnt2=0;
+  int arr1[256],arr2[256];
+  bzero(arr1,sizeof(int)*256);
+  bzero(arr2,sizeof(int)*256);
+
+  travelavltree(t1,arr1,256,cnt1);
+  travelavltree(t2,arr2,256,cnt2);
+  
+  //printf("%d %d\n",cnt1,cnt2);
+  //for(int j=0;j<cnt1;j++)
+  //  printf("%d %d\n",arr1[j],arr2[j]);
+  return intarrayisequal(arr1,arr2,cnt1,cnt2);
+}
 
 #endif

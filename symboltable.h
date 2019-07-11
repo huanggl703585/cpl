@@ -5,6 +5,8 @@
 #include "symbolattr.h"
 #include "hash.h"
 
+#define ASCII_BIAS 127
+
 typedef struct symboltable symboltable;
 typedef struct symbolitem symbolitem;
 
@@ -17,23 +19,29 @@ struct symbolitem{
 struct symboltable{
   int size;
   int count;
+  int bias; //for idarray
+  int *idarray;
   symbolitem **table;
 };
 
 #define symbol_table_basic_size 1024
 
-symboltable* createsymboltable(size_t size);
+symboltable* createsymboltable(size_t size,int bias);
 int insertsymboltable(symboltable* st,char *str,symbolattr *attr);
 symbolattr* searchsymboltablebyname(symboltable *st,char *str);
+symbolattr* searchsymboltablebyid(symboltable *st,int id);
 int changesymboltablebyname(symboltable *st,char *str,symbolattr *attr);
+int changesymboltablebyid(symboltable *st,int id,symbolattr *attr);
 
-
-symboltable *createsymboltable(size_t size)
+symboltable *createsymboltable(size_t size,int bias)
 {
   symboltable* ret=(symboltable*)malloc(sizeof(symboltable));
   ret->size=size;
   ret->count=0;
+  ret->bias=bias;
+  ret->idarray=(int*)malloc(sizeof(int)*(ret->size));
   ret->table=(symbolitem**)malloc(sizeof(symbolitem*)*(ret->size));
+  bzero(ret->idarray,sizeof(int)*(ret->size));
   bzero(ret->table,sizeof(symbolitem*)*(ret->size));
   return ret;
 }
@@ -56,13 +64,15 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   char *pt=(char*)malloc(len+1);
   memcpy(pt,str,len+1);
   item->name=pt;
-  item->id=((st->count)++);
+  item->id=((st->count));
   item->attr=attr;
   st->table[hashvalue]=item;
-  return 0;
+  st->idarray[st->bias+st->count]=hashvalue;
+  st->count++;
+  return item->id;
 }
 
-symbolattr* searchsymboltable(symboltable *st,char *str)
+symbolattr* searchsymboltablebyname(symboltable *st,char *str)
 {
   unsigned int hashvalue = strhash(str)%(st->size);
   unsigned int head=hashvalue;
@@ -75,6 +85,13 @@ symbolattr* searchsymboltable(symboltable *st,char *str)
   }while(item!=NULL && hashvalue!=head);
   
   return NULL;
+}
+
+symbolattr* searchsymboltablebyid(symboltable *st,int id)
+{
+  int pos=st->idarray[id];
+  symbolitem* item=st->table[pos];
+  return item->attr;
 }
 
 int changesymboltable(symboltable *st,char *str,symbolattr *attr)
@@ -92,5 +109,12 @@ int changesymboltable(symboltable *st,char *str,symbolattr *attr)
   }while(item!=NULL && hashvalue!=head);
   
   return 1;
+}
+
+int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
+{
+  int pos=st->idarray[id];
+  symbolitem *item=st->table[pos];
+  item->attr=attr;
 }
 #endif

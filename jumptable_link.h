@@ -35,6 +35,8 @@ jumptable_link* createjumptablelink();
 int jumptableadd(jumptable_link *jtable,int from,int inupt,int to);
 int jumptablefind(jumptable_link *jtable,int from,int input);
 
+void printjumptable(jumptable_link *jtable);
+
 //sum of each statenode's maxinput-mininput+1
 int getjumpsum(jumptable_link *jtable);
 
@@ -141,6 +143,23 @@ int getjumpsum(jumptable_link *jtable)
     sum+=(pos->maxinput-pos->mininput+1);
   }
   return sum;
+}
+
+void printjumptable(jumptable_link *jtable)
+{
+  printf("jumptable statecnt %d\n",jtable->statecnt);
+  
+  statenode *siter;
+  statenode *shead=jtable->statelist;
+  list_for_each_entry(siter,&(shead->statelist),statelist){
+    printf("stateid %d\n",siter->stateid);
+    jumpnode *jiter;
+    jumpnode *jhead=siter->jumplist;
+    list_for_each_entry(jiter,&(jhead->jumplist),jumplist){
+      printf(" %d %d\n",jiter->input,jiter->dest);
+    }
+  }
+  printf("\n");
 }
 
 #endif

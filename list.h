@@ -77,12 +77,6 @@ void listdel(struct list_head *l)
       &pos->member!=(head);				\
       pos=list_next_entry(pos,member))
 
-//IT IS ERROR
-#define list_for_each_entry_withouthead(pos,head,member)	\
-  for(pos=list_entry(head,typeof(*pos),member);			\
-      &pos->member!=(head);					\
-      pos=list_next_entry(pos,member))
-
 #define list_find_key(pos,listhead,member,keymember,target,isequal)	\
   list_for_each_entry(pos,&(listhead->member),member){			\
     if(isequal((void*)target,pos->keymember))				\
