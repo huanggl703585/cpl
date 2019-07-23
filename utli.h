@@ -8,7 +8,8 @@
 #define max(x,y) ((x)<(y)?(y):(x))
 
 #define intequal(x,y) ((int)x==(int)y)
-#define intcmp(x,y) ((x>y)?1:((x==y)?0:-1))
+#define intcmp(x,y) (((x)>(y))?1:(((x)==(y))?0:-1))
+#define intcmp_reverse(x,y) (((x)<(y))?1:(((x)==(y))?0:-1))
 
 #define upperdiv(x,y) (((x)+(y)-1)/(y))
 

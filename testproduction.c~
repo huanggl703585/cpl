@@ -1,0 +1,10 @@
+#include "production.h"
+#include <stdio.h>
+
+int main()
+{
+  production *p=createproduction(1);
+  appendproduction(p,2);
+  appendproduction(p,3);
+  printproduction(p);
+}

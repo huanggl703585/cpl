@@ -2,9 +2,10 @@
 #define __DFA_H
 
 #include "set.h"
-#include "re.h"
+#include "re_node.h"
 #include "jumptable_link.h"
 #include "dynamicarray.h"
+#include "tree.h"
 
 typedef struct dfa dfa;
 struct dfa{
@@ -19,7 +20,11 @@ typedef struct dfa_instance dfa_instance;
 struct dfa_instance{
   dfa *dfa;
   int state;
+  int lastendstate;
 };
+
+#define getendstate(instance)			\
+  (instance->lastendstate)
 
 #define inendstate(dfa,state)			\
   (valueindarray(dfa->end,state))
@@ -42,32 +47,22 @@ dfa* createdfa(re_node *tree,int nodenum)
   set *alphaset=NULL; //char set
   //get a post-order travel
   //TODO: THAT NODEARR'S LENGTH SHOULD REPLACED BY A MACRO
-  re_node *nodearr[256];
-  nodearr[0]=tree;
-  int pt=0;
-  //middle--right--left
-  while(pt<nodenum){
-    re_node* cur=nodearr[pt];
-    int temp=pt;
-    if(isleave(cur)){
-      //if(cur->key.leave->index!=0){
-	insertset(alphaset,cur->key.leave->index);
-	//}
-    }
-    if(cur->right!=NULL)
-      nodearr[++temp]=cur->right;
-    if(cur->left!=NULL)
-      nodearr[++temp]=cur->left;
-    pt++;
-  }
+  re_node *nodearr[256];  
+  nodenum=post_order_travel(tree,nodearr,256,left,right);
 
+  printf("\n%d \n",nodenum);
+  for(int i=0;i<nodenum;i++){
+    printrenode(nodearr[i]);
+  }
+  
   //index record the leave, cooperate with nodecnt
   re_node *index[nodenum];
   int nodecnt=1; //number of leave, stands for position, so starts from 1
-  //reverse -> left--right--middle
+  //left--right--middle
   //compute nullable, firstpos, lastpos
-  for(int i=nodenum-1;i>=0;i--){
+  for(int i=0;i<nodenum;i++){
     if(isleave(nodearr[i])){
+      insertset(alphaset,nodearr[i]->key.leave->index);
       //printf("p %d\n",nodearr[i]->key.leave->index);
       if(nodearr[i]->key.leave->index==0)
 	endposition=nodecnt;
@@ -127,33 +122,35 @@ dfa* createdfa(re_node *tree,int nodenum)
 	
 	set *arr[256];
 	int pt=0;
+	int tmpcnt=1;
 	arr[0]=left->lastpos;
 	while(pt>=0){
 	  set *cur=arr[pt--];
 	  intersectset(&(followpos[cur->key]),right->firstpos);
 	  if(cur->left!=NULL)
-	    arr[++pt]=cur->left;
+	    arr[tmpcnt++]=cur->left;
 	  if(cur->right!=NULL)
-	    arr[++pt]=cur->right;
+	    arr[tmpcnt++]=cur->right;
 	}
       }
       else if(nodearr[i]->key.node->operator==STAR){
 	set *arr[256];
 	int pt=0;
+	int tmpcnt=1;
 	arr[0]=nodearr[i]->lastpos;
 	while(pt>=0){
 	  //printf("%d ",pt);
 	  set *cur=arr[pt--];
 	  intersectset(&(followpos[cur->key]),nodearr[i]->firstpos);
 	  if(cur->left!=NULL)
-	    arr[++pt]=cur->left;
+	    arr[tmpcnt++]=cur->left;
 	  if(cur->right!=NULL)
-	    arr[++pt]=cur->right;
+	    arr[tmpcnt++]=cur->right;
 	}
       }
     }
   }
-  /*
+  
   printf("print\n");
   for(int i=nodenum-1;i>=0;i--){
     printf("%d \n",nodearr[i]->index);
@@ -161,7 +158,7 @@ dfa* createdfa(re_node *tree,int nodenum)
     avltreeprint(nodearr[i]->lastpos);
     printf("\n");
   }
-  
+  /*
   printf("\n");
   for(int i=1;i<nodecnt;i++){
     //avltreeprint(followpos[i]);
@@ -238,12 +235,12 @@ dfa* createdfa(re_node *tree,int nodenum)
     for(int j=0;j<travelcnt;j++){
       //printf(" %d ",travelarr[j]);
       if(travelarr[j]==endposition){
-	insertdarray(ret->end,j+1);
+	insertdarray(ret->end,(void*)(j+1));
       }
     }
     printf("\n");
   }
-
+  
   ret->start=1;
   ret->alphabet=alphaset;
   ret->statecnt=statecnt;
@@ -269,11 +266,11 @@ dfa_instance * createdfainstance(dfa *dfa)
 int walkdfa(dfa_instance *instance,int input)
 {
   int ret=jumptablefind(instance->dfa->jtable,instance->state,input);
-  if(valueindarray(instance->dfa->end,instance->state)){
-    instance->state=instance->dfa->start;
+  if(valueindarray(instance->dfa->end,instance->state,intequal)){
+    //instance->state=instance->dfa->start;
+    instance->lastendstate=ret;
   }
-  else 
-    instance->state=ret;
+  instance->state=ret;
   return ret;
 }
 

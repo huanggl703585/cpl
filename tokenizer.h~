@@ -1,0 +1,13 @@
+#ifndef __TOKENIZER_H
+#define __TOKENIZER_H
+
+#include "txtreader.h"
+#include "mapinput.h"
+
+typedef struct tokenizer tokenizer;
+struct tokenizer{
+  reader *reader;
+  charmapper *mapper;
+};
+
+#endif

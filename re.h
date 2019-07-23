@@ -21,6 +21,8 @@ struct re_symbol{
 #define CAT  1
 #define OR   2
 #define STAR 3
+#define LEFTPARTH 4
+#define RIGHTPARTH 5
 
 struct re_operator{
   int operator;
@@ -33,23 +35,6 @@ struct re_seq{
   re_symbol *operands;
   re_operator *operator;
 };
-
-#define isleave(node) (node->left==NULL && node->right==NULL)
-
-struct re_node{
-  union{
-    re_symbol *leave;
-    re_operator *node;
-  }key;
-  int index;
-  int nullable;
-  set* firstpos;
-  set* lastpos;
-  struct re_node *left;
-  struct re_node *right;
-};
-
-#define isnode(node) (node->left!=NULL || node->right!=NULL)
 
 
 /*
@@ -71,8 +56,7 @@ void insertresymbol(re_seq *seq,int index);
 re_operator* initreoperator();
 re_operator* createreoperator(int operator);
 void insertreoperator(re_seq *seq,int operator);
-re_node* createrenode(int isleave,void *key);
-re_node* reseqtotree(re_seq *seq);
+
 
 re_operator* resymtooper(re_seq *seq,int symindex);
 
@@ -136,47 +120,6 @@ void insertreoperator(re_seq *seq,int operator)
   listaddtail(&(new->list),&(seq->operator->list));
 }
 
-re_node *createrenode(int isleave,void *key)
-{
-  re_node *ret=(re_node*)malloc(sizeof(re_node));
-  ret->left=ret->right=NULL;
-  if(isleave)
-    ret->key.leave=(re_symbol*)key;
-  else
-    ret->key.node=(re_operator*)key;
-  ret->firstpos=ret->lastpos=NULL;
-  return ret;
-}
-
-//a left-lean tree, leave is symbol, node is operator
-re_node* reseqtotree(re_seq *seq)
-{
-  re_symbol *curoperand;
-  re_node *curnode;
-
-  int indexcnt=1;
-  curoperand=list_next_entry(seq->operands,list);
-  curnode=createrenode(1,curoperand);
-  curnode->index=indexcnt++;
-
-  re_operator *oper=list_next_entry(seq->operator,list);
-  do{
-    re_node *rightnode=NULL,*parent=NULL;
-    if(oper->operator != STAR){  //operator is binary operator
-      curoperand=list_next_entry(curoperand,list);
-      rightnode=createrenode(1,curoperand);
-      rightnode->index=indexcnt++;
-    }
-    parent=createrenode(0,oper);
-    parent->left=curnode;
-    parent->right=rightnode;
-    //printf("%d %d\n",curnode->key.leave->index,parent->key.node->operator);
-    curnode=parent;
-
-  }while((oper=list_next_entry(oper,list))!=seq->operator);
-  return curnode;
-}
-
 //point to 'next', for example:
 //symbol:   a    b      c
 //operator:CAT STAR OR STAR
@@ -191,10 +134,67 @@ re_operator* resymtooper(re_seq *seq,int symindex)
   }
   return ret;
 }
+//=====================iterator
 
+#define nextoperands(operands)			\
+  (list_next_entry(operands,list))
+#define nextoperator(operator)			\
+  (list_next_entry(operator,list))
+
+#define operandsend(iter)			\
+  (iter->operands==iter->seq->operands)
+#define operatorend(iter)			\
+  (iter->operator==iter->seq->operator)
+#define reiteratorend(iter)			\
+  (operandsend(iter) && operatorend(iter))
+
+typedef struct re_iterator re_iterator;
+struct re_iterator{
+  re_seq *seq;
+  re_symbol *operands;
+  re_operator *operator;
+};
+
+re_iterator *createreiterator(re_seq *seq);
+re_symbol* getnextoperands(re_iterator *iter);
+re_operator* getnextoperator(re_iterator *iter);
+
+#define initreiterator(iter,seq)		\
+  iter.seq=seq;					\
+  iter.operands=nextoperands(seq->operands);	\
+  iter.operator=nextoperator(seq->operator)
+
+re_iterator *createreiterator(re_seq *seq)
+{
+  re_iterator *ret=(re_iterator*)malloc(sizeof(re_iterator));
+  ret->seq=seq;
+  ret->operands=nextoperands(seq->operands);
+  ret->operator=nextoperator(seq->operator);
+  return ret;
+}
+
+re_symbol* getnextoperands(re_iterator *iter)
+{
+  if(operandsend(iter))
+    return NULL;
+  re_symbol *ret=iter->operands;
+  iter->operands=nextoperands(iter->operands);
+  //printf("%d \n",ret->index);
+
+  return ret;
+}
+
+re_operator* getnextoperator(re_iterator *iter)
+{
+  if(operatorend(iter))
+    return NULL;
+  re_operator *ret=iter->operator;
+  iter->operator=nextoperator(iter->operator);
+ 
+  return ret;
+}
 //=====================for test/print
 void travelresymbol(re_symbol *sym);
-void travelretree(re_node *tree);
 
 void travelresymbol(re_symbol *sym)
 {
@@ -202,20 +202,6 @@ void travelresymbol(re_symbol *sym)
   do{
     printf("%d \n",iter->index);
   }while((iter=list_next_entry(iter,list))!=sym);
-}
-
-//post order traversal
-void travelretree(re_node *tree)
-{
-  if(isnode(tree)){
-    if(tree->left!=NULL)
-      travelretree(tree->left);
-    if(tree->right!=NULL)
-      travelretree(tree->right);
-    printf("%d \n",tree->key.node->operator);
-  }
-  else
-    printf("%d \n",tree->key.leave->index);
 }
 
 #endif

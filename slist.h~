@@ -1,0 +1,10 @@
+#ifndef __SLIST_H
+#define __SLIST_H
+
+typedef struct slist slist;
+struct slist{
+  void *key;
+  struct list_head list;
+};
+
+#endif

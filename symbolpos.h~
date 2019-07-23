@@ -1,0 +1,10 @@
+#ifndef __SYMBOLPOS_H
+#define __SYMBOLPOS_H
+
+typedef struct symbolpos symbolpos;
+struct symbolpos{
+  symboltable *table;
+  int id;
+};
+
+#endif

@@ -36,13 +36,14 @@ int main()
   list_init(k3->list);
   list_init(k4->list);
 
-  list_insert_order(tmp,k,list,key,k1,charcmp);
+  list_insert_order(k,list,key,k4,charcmp);
+
+  list_insert_order(k,list,key,k1,charcmp);
   printf("\n");
-  list_insert_order(tmp,k,list,key,k2,charcmp);
+  //list_insert_order(k,list,key,k2,charcmp);
   printf("\n");
-  list_insert_order(tmp,k,list,key,k3,charcmp);
+  //list_insert_order(k,list,key,k3,charcmp);
   printf("\n");
-  list_insert_order(tmp,k,list,key,k4,charcmp);
   //list_find_key(tmp,&(k1->list),list,key,k2,charcmp);
   //list_for_each_entry_withouthead(tmp,&(k1->list),list){
   //printf("%d ",(int)(tmp->key));

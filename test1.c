@@ -1,8 +1,12 @@
 #include <stdio.h>
-#include "utli.h"
-
+#include <stdlib.h>
+#include <string.h>
+//#include "utli.h"
+#include "mstring.h"
 int main()
 {
   char *s="  hello world ";
-  printf("%d ",_getstr(s));
+  string *str=(string*)malloc(20);
+  string ss=*str;
+  initstring(ss,s,strlen(s));
 }

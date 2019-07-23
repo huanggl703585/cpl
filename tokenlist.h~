@@ -1,0 +1,18 @@
+#ifndef __TOKENLIST_H
+#define __TOKENLIST_H
+
+//for grammar analysis
+#define IDENTIFIER  1
+#define EQUIVALANCE 2
+
+typedef struct tokenlist tokenlist;
+struct tokenlist{
+  int type;
+  struct list_head list;
+  int len;
+  char data[];
+};
+
+
+
+#endif

@@ -63,8 +63,8 @@ static statenode* createstatenode(jumptable_link* jtable,int stateid)
   ret->jumpcnt++;
   ret->mininput=ret->maxinput=0;
   list_init(ret->statelist);
-  statenode *tmp;
-  list_insert_order(tmp,jtable->statelist,statelist,stateid,ret,intcmp);
+  
+  list_insert_order(jtable->statelist,statelist,stateid,ret,intcmp);
   
   jumpnode *listhead=(jumpnode*)malloc(sizeof(jumpnode));
   listhead->input=0;
@@ -80,8 +80,8 @@ static jumpnode* createjumpnode(statenode *snode,int input,int dest)
   ret->input=input;
   ret->dest=dest;
   list_init(ret->jumplist);
-  jumpnode *tmp;
-  list_insert_order(tmp,snode->jumplist,jumplist,input,ret,intcmp);
+  
+  list_insert_order(snode->jumplist,jumplist,input,ret,intcmp);
   
   return ret;
 }

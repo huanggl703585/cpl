@@ -28,8 +28,8 @@ struct symboltable{
 
 symboltable* createsymboltable(size_t size,int bias);
 int insertsymboltable(symboltable* st,char *str,symbolattr *attr);
-symbolattr* searchsymboltablebyname(symboltable *st,char *str);
-symbolattr* searchsymboltablebyid(symboltable *st,int id);
+symbolitem* searchsymboltablebyname(symboltable *st,char *str);
+symbolitem* searchsymboltablebyid(symboltable *st,int id);
 int changesymboltablebyname(symboltable *st,char *str,symbolattr *attr);
 int changesymboltablebyid(symboltable *st,int id,symbolattr *attr);
 
@@ -53,6 +53,8 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   symbolitem *item=(st->table)[hashvalue];
 
   while(item!=NULL){
+    if(strcmp(item->name,str)==0)
+      return item->id;
     hashvalue=(hashvalue+1)%(st->size);
     item=(st->table)[hashvalue];
     if(hashvalue==head) // the table is full
@@ -64,7 +66,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   char *pt=(char*)malloc(len+1);
   memcpy(pt,str,len+1);
   item->name=pt;
-  item->id=((st->count));
+  item->id=((st->count)+st->bias);
   item->attr=attr;
   st->table[hashvalue]=item;
   st->idarray[st->bias+st->count]=hashvalue;
@@ -72,7 +74,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   return item->id;
 }
 
-symbolattr* searchsymboltablebyname(symboltable *st,char *str)
+symbolitem* searchsymboltablebyname(symboltable *st,char *str)
 {
   unsigned int hashvalue = strhash(str)%(st->size);
   unsigned int head=hashvalue;
@@ -80,18 +82,18 @@ symbolattr* searchsymboltablebyname(symboltable *st,char *str)
   
   do{
     if(strcmp(str,item->name)==0)
-      return item->attr;
+      return item;
     item=(st->table)[++hashvalue];
   }while(item!=NULL && hashvalue!=head);
   
   return NULL;
 }
 
-symbolattr* searchsymboltablebyid(symboltable *st,int id)
+symbolitem* searchsymboltablebyid(symboltable *st,int id)
 {
   int pos=st->idarray[id];
   symbolitem* item=st->table[pos];
-  return item->attr;
+  return item;
 }
 
 int changesymboltable(symboltable *st,char *str,symbolattr *attr)

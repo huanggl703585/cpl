@@ -1,0 +1,8 @@
+#include "txtreader.h"
+#include "symboltable.h"
+
+int main()
+{
+  reader *r=createreader("cgrammar.txt",4096);
+  
+}

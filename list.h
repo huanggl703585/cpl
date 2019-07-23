@@ -72,7 +72,7 @@ void listdel(struct list_head *l)
   list_entry((pos)->member.next,typeof(*pos),member)  
 
 //head is a ptr
-#define list_for_each_entry(pos,head,member)	\
+#define list_for_each_entry(pos,head,member)		\
   for(pos=list_first_entry(head,typeof(*pos),member);	\
       &pos->member!=(head);				\
       pos=list_next_entry(pos,member))
@@ -89,15 +89,18 @@ void listdel(struct list_head *l)
     if(cmp(target->keymember,pos->keymember)<0)				\
       break;								\
   }									\
-  pos=list_last_entry(&(pos->member),typeof(*pos),member);
+  pos=list_last_entry(&(pos->member),typeof(*pos),member)
 
 //ignore it
 //if &(pos->member)==head, can't find relative key
 
 //listhead is different from list above
-#define list_insert_order(pos,listhead,member,keymember,new,cmp)	\
-  list_cmp_key(pos,&(listhead->member),member,keymember,new,cmp)	\
-  listadd(&(new->member),&(pos->member))
+#define list_insert_order(listhead,member,keymember,new,cmp)		\
+  do{									\
+    typeof(listhead) __pos;						\
+    list_cmp_key(__pos,&(listhead->member),member,keymember,new,cmp);	\
+    listadd(&(new->member),&(__pos->member));				\
+  }while(0)
 
 #endif
 
