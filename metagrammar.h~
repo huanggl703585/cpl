@@ -1,0 +1,6 @@
+#ifndef __METAGRAMMAR_H
+#define __METAGRAMMAR_H
+
+//meta-grammar means that we use that grammar to read other grammar
+
+#endif

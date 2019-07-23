@@ -49,11 +49,11 @@ dfa* createdfa(re_node *tree,int nodenum)
   //TODO: THAT NODEARR'S LENGTH SHOULD REPLACED BY A MACRO
   re_node *nodearr[256];  
   nodenum=post_order_travel(tree,nodearr,256,left,right);
-
-  printf("\n%d \n",nodenum);
+ 
+  /*printf("\n%d \n",nodenum);
   for(int i=0;i<nodenum;i++){
     printrenode(nodearr[i]);
-  }
+    }*/
   
   //index record the leave, cooperate with nodecnt
   re_node *index[nodenum];
@@ -63,18 +63,14 @@ dfa* createdfa(re_node *tree,int nodenum)
   for(int i=0;i<nodenum;i++){
     if(isleave(nodearr[i])){
       insertset(alphaset,nodearr[i]->key.leave->index);
-      //printf("p %d\n",nodearr[i]->key.leave->index);
+      index[nodecnt++]=nodearr[i];
       if(nodearr[i]->key.leave->index==0)
 	endposition=nodecnt;
-      index[nodecnt++]=nodearr[i];
-      //printf("index %d %d\n",nodecnt-1,index[nodecnt-1]->key.leave->index);
-	  
-      //insertset((alphabet),nodearr[i]->key.leave->index);
-      //insertset((alphaset),nodearr[i]->key.leave->index);
+   
       if(nodearr[i]->key.leave->index==RE_EMPTY_SYMBOL)
 	nodearr[i]->nullable=1;
       else{
-	insertset((nodearr[i]->firstpos),nodearr[i]->index);
+	insertset(nodearr[i]->firstpos,nodearr[i]->index);
 	insertset(nodearr[i]->lastpos,nodearr[i]->index);
       }
     }
@@ -114,7 +110,7 @@ dfa* createdfa(re_node *tree,int nodenum)
   set *followpos[nodecnt];
   for(int i=0;i<nodecnt;i++)
     followpos[i]=NULL;
-  for(int i=nodenum-1;i>=0;i--){
+  for(int i=0;i<nodenum;i++){
     if(isnode(nodearr[i])){
       if(nodearr[i]->key.node->operator==CAT){
 	re_node *right=nodearr[i]->right;
@@ -152,20 +148,20 @@ dfa* createdfa(re_node *tree,int nodenum)
   }
   
   printf("print\n");
-  for(int i=nodenum-1;i>=0;i--){
+  for(int i=0;i<nodenum;i++){
     printf("%d \n",nodearr[i]->index);
     avltreeprint(nodearr[i]->firstpos);  
     avltreeprint(nodearr[i]->lastpos);
     printf("\n");
   }
-  /*
+  
   printf("\n");
   for(int i=1;i<nodecnt;i++){
-    //avltreeprint(followpos[i]);
-    printf("%d \n",index[i]->key.leave->index);
+    avltreeprint(followpos[i]);
+    //printf("%d \n",index[i]->key.leave->index);
   }
   printf("\n");
-  */
+  
   
   int alphabet[256]={0};
   int alphacnt;

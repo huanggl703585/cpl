@@ -1,42 +1,46 @@
 #ifndef __TOKENLIST_H
 #define __TOKENLIST_H
 
-//for grammar analysis
-#define IDENTIFIER  1
-#define EQUIVALANCE 2
+#include "symbolpos.h"
+
+typedef struct token token;
+struct token{
+  int gindex;
+  int sindex;
+  struct list_head list;
+};
 
 typedef struct tokenlist tokenlist;
 struct tokenlist{
-  union{
-    int type;
-    symboltable *table;
-  }head;
-  struct list_head list;
-  int index;
+  symboltable *gtable; //in grammar, like identifier\constant and so on
+  symboltable *stable; //in symbol, like i,tep,323
+  token *tlist;
 };
 
-#define inittokenlist(name,_table)				\
-  tokenlist *name=(tokenlist*)malloc(sizeof(tokenlist));	\
-  name->head.table=table;					\
-  list_init(name->list)
-
-#define _appendtokenlist(new,listhead)		\
-  listaddtail(&(new->list),&(listhead->list))
-
-tokenlist *createtokenlist(int type,int index);
-
-#define appendtokenlist(listhead,type,index)		\
-  do{							\
-    tokenlist *__new=createtokenlist(type,index);	\
-    _appendtokenlist(__new,listhead);			\
+#define appendtokenlist(tokenlist,gindex,sindex)		\
+  do{								\
+    token *__tmp=createtoken(gindex,sindex);			\
+    listaddtail(&(__tmp->list),&(tokenlist->tlist->list));	\
   }while(0)
 
-tokenlist *createtokenlist(int type,int index)
+token *createtoken(int gindex,int sindex);
+tokenlist *createtokenlist(symboltable *gtable,symboltable *stable);
+
+token *createtoken(int gindex,int sindex)
+{
+  token *ret=(token*)malloc(sizeof(token));
+  ret->gindex=gindex;
+  ret->sindex=sindex;
+  list_init(ret->list);
+  return ret;
+}
+
+tokenlist *createtokenlist(symboltable *gtable,symboltable *stable)
 {
   tokenlist *ret=(tokenlist*)malloc(sizeof(tokenlist));
-  ret->head.type=type;
-  list_init(ret->list);
-  ret->index=index;
+  ret->gtable=gtable;
+  ret->stable=stable;
+  ret->tlist=createtoken(0,0);
   return ret;
 }
 
@@ -44,10 +48,10 @@ tokenlist *createtokenlist(int type,int index)
 //=============================test
 void printtokenlist(tokenlist *tlist)
 {
-  symboltable *table=tlist->head.table;
-  tokenlist *pos;
-  list_for_each_entry(pos,&(tlist->list),list){
-    printf("%s ",table);
+  token *head=tlist->tlist;
+  token *pos;
+  list_for_each_entry(pos,&(head->list),list){
+    printf("%d %d ",pos->gindex,pos->sindex);
   }
 }
 

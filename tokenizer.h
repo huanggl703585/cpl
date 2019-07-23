@@ -9,7 +9,10 @@
 typedef struct tokenizer tokenizer;
 struct tokenizer{
   reader *reader;
-  charmapper *mapper;
+  symboltable *gtable; //it stores grammar
+  symboltable *ttable; //it stores token
+  dfa_instance *dfa;
+  tokenlist *tlist;
 };
 
 
