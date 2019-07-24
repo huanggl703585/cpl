@@ -30,7 +30,8 @@ int buildmetagrammar()
   productionbody *pbpos;
   //token ::= identifier | equivalence | or
   spos=searchsymboltablebyid(table,array[0]);
-  ppos=spos->attr->attr.prod=createproduction(array[0]);
+  spos->attr->attr.prod=createproduction(array[0]);
+  ppos=spos->attr->attr.prod;
   pbpos=createproductionbody(ppos);
   appendprodbody(pbpos,array[1]);
   pbpos=createproductionbody(ppos);
@@ -63,14 +64,14 @@ int buildmetagrammar()
   ppos=spos->attr->attr.prod=createproduction(array[2]);
   pbpos=createproductionbody(ppos);
   appendprodbody(pbpos,'_');
-  appendprodbodyrange(ppos,'0','9');
-  appendprodbodyrange(ppos,'a','z');
-  appendprodbodyrange(ppos,'A','Z');
+  appendprodrange(ppos,'0','9');
+  appendprodrange(ppos,'a','z');
+  appendprodrange(ppos,'A','Z');
 
   //digit
   spos=searchsymboltablebyid(table,array[3]);
   ppos=spos->attr->attr.prod=createproduction(array[3]);
-  appendprodbodyrange(ppos,'0','9');
+  appendprodrange(ppos,'0','9');
 
   for(int i=0;i<5;i++){
     spos=searchsymboltablebyid(table,array[i]);

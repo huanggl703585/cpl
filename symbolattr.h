@@ -15,7 +15,7 @@ typedef struct symbolattr symbolattr;
 struct symbolattr{
   int type;
   union{
-    production *production;
+    production *prod;
     charmapper *mapper;
   }attr;
   node *node;
@@ -30,7 +30,7 @@ int tsymbolappendmapper(symbolattr *attr,int map);
 
 int ntsymbolsetattr(symbolattr *attr)
 {
-  production *ppos=attr->attr.production;
+  production *ppos=attr->attr.prod;
   return 1;
 }
 #endif

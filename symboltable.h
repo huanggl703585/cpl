@@ -54,7 +54,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
 
   while(item!=NULL){
     if(strcmp(item->name,str)==0)
-      return item->id;
+      return -1; //we consider dupcate name is an error
     hashvalue=(hashvalue+1)%(st->size);
     item=(st->table)[hashvalue];
     if(hashvalue==head) // the table is full
@@ -71,6 +71,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   st->table[hashvalue]=item;
   st->idarray[st->bias+st->count]=hashvalue;
   st->count++;
+  item->attr=(symbolattr*)malloc(sizeof(symbolattr));
   return item->id;
 }
 
