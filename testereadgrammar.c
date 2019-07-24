@@ -3,9 +3,9 @@
 int main()
 {
   initreadgrammar();
-  //re_node *ret=buildtree(re_grammar);
+  re_node *ret=buildtree(re_grammar);
   //travelretree(ret);
   
-  //dfa *dfa=createdfa(ret,20);
+  dfa *dfa=createdfa(ret,20);
   //printdfa(dfa);
 }

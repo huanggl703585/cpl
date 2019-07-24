@@ -1,8 +1,9 @@
 #ifndef __RE_NODE_H
 #define __RE_NODE_H
 
-#include "re.h"
+#include "re_seq.h"
 
+typedef struct re_node re_node;
 struct re_node{
   union{
     re_symbol *leave;

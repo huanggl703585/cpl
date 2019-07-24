@@ -21,4 +21,16 @@ struct symbolattr{
   node *node;
 };
 
+/*
+  non-terminal set type
+  terminal set mapper
+*/
+int ntsymbolsetattr(symbolattr *attr);
+int tsymbolappendmapper(symbolattr *attr,int map);
+
+int ntsymbolsetattr(symbolattr *attr)
+{
+  production *ppos=attr->attr.production;
+  return 1;
+}
 #endif

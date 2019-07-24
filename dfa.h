@@ -48,7 +48,7 @@ dfa* createdfa(re_node *tree,int nodenum)
   //get a post-order travel
   //TODO: THAT NODEARR'S LENGTH SHOULD REPLACED BY A MACRO
   re_node *nodearr[256];  
-  nodenum=post_order_travel(tree,nodearr,256,left,right);
+  int nodecnt=post_order_travel(tree,nodearr,256,left,right);
  
   /*printf("\n%d \n",nodenum);
   for(int i=0;i<nodenum;i++){
@@ -56,16 +56,18 @@ dfa* createdfa(re_node *tree,int nodenum)
     }*/
   
   //index record the leave, cooperate with nodecnt
-  re_node *index[nodenum];
-  int nodecnt=1; //number of leave, stands for position, so starts from 1
+  re_node *leave[nodecnt];
+  int leavecnt=1; //number of leave, stands for position, so starts from 1
   //left--right--middle
   //compute nullable, firstpos, lastpos
   for(int i=0;i<nodenum;i++){
     if(isleave(nodearr[i])){
       insertset(alphaset,nodearr[i]->key.leave->index);
-      index[nodecnt++]=nodearr[i];
+      nodearr[i]->index=leavecnt;
+      leave[leavecnt++]=nodearr[i];
+
       if(nodearr[i]->key.leave->index==0)
-	endposition=nodecnt;
+	endposition=nodearr[i]->index;
    
       if(nodearr[i]->key.leave->index==RE_EMPTY_SYMBOL)
 	nodearr[i]->nullable=1;
@@ -110,45 +112,31 @@ dfa* createdfa(re_node *tree,int nodenum)
   set *followpos[nodecnt];
   for(int i=0;i<nodecnt;i++)
     followpos[i]=NULL;
-  for(int i=0;i<nodenum;i++){
+  for(int i=0;i<nodecnt;i++){
     if(isnode(nodearr[i])){
       if(nodearr[i]->key.node->operator==CAT){
 	re_node *right=nodearr[i]->right;
 	re_node *left=nodearr[i]->left;
 	
-	set *arr[256];
-	int pt=0;
-	int tmpcnt=1;
-	arr[0]=left->lastpos;
-	while(pt>=0){
-	  set *cur=arr[pt--];
-	  intersectset(&(followpos[cur->key]),right->firstpos);
-	  if(cur->left!=NULL)
-	    arr[tmpcnt++]=cur->left;
-	  if(cur->right!=NULL)
-	    arr[tmpcnt++]=cur->right;
-	}
+	int arr[nodecnt];
+	int num;
+	travelavltree(left->lastpos,arr,nodecnt,num);
+	for(int i=0;i<num;i++)
+	  intersectset(&(followpos[arr[i]]),right->firstpos);
       }
       else if(nodearr[i]->key.node->operator==STAR){
-	set *arr[256];
-	int pt=0;
-	int tmpcnt=1;
-	arr[0]=nodearr[i]->lastpos;
-	while(pt>=0){
-	  //printf("%d ",pt);
-	  set *cur=arr[pt--];
-	  intersectset(&(followpos[cur->key]),nodearr[i]->firstpos);
-	  if(cur->left!=NULL)
-	    arr[tmpcnt++]=cur->left;
-	  if(cur->right!=NULL)
-	    arr[tmpcnt++]=cur->right;
-	}
+	int arr[nodecnt];
+	int num;
+	re_node *cur=nodearr[i];
+	travelavltree(cur->firstpos,arr,nodecnt,num);
+	for(int i=0;i<num;i++)
+	  intersectset(&(followpos[arr[i]]),cur->firstpos);
       }
     }
   }
-  
+  /*
   printf("print\n");
-  for(int i=0;i<nodenum;i++){
+  for(int i=0;i<nodecnt;i++){
     printf("%d \n",nodearr[i]->index);
     avltreeprint(nodearr[i]->firstpos);  
     avltreeprint(nodearr[i]->lastpos);
@@ -156,12 +144,13 @@ dfa* createdfa(re_node *tree,int nodenum)
   }
   
   printf("\n");
-  for(int i=1;i<nodecnt;i++){
+  for(int i=0;i<nodecnt;i++){
+    printf("index %d  ",nodearr[i]->index);
     avltreeprint(followpos[i]);
     //printf("%d \n",index[i]->key.leave->index);
   }
   printf("\n");
-  
+  */
   
   int alphabet[256]={0};
   int alphacnt;
@@ -197,7 +186,7 @@ dfa* createdfa(re_node *tree,int nodenum)
       for(int j=0;j<curcnt;j++){
 	//printf("\nprintfollowpos\n");
 	//avltreeprint(followpos[curposition[j]]);
-	if(alphabet[i]==(index[curposition[j]]->key.leave->index)){
+	if(alphabet[i]==(leave[curposition[j]]->key.leave->index)){
 	  intersectset(&tmpset,(followpos[curposition[j]]));
 	}
       }
@@ -218,11 +207,12 @@ dfa* createdfa(re_node *tree,int nodenum)
     }
   }
   
-  printf("\n\n");
-  //NEED TO FIND END STATE
+  //printf("\n\n");
+  //find end state
   int endstate;
   int travelarr[256]={0};
   int travelcnt;
+  //printf("endposition %d\n",endposition);
   for(int i=0;i<statecnt;i++){
     set *travelset=stateset[i];
     bzero(travelarr,sizeof(int)*256);
@@ -231,7 +221,7 @@ dfa* createdfa(re_node *tree,int nodenum)
     for(int j=0;j<travelcnt;j++){
       //printf(" %d ",travelarr[j]);
       if(travelarr[j]==endposition){
-	insertdarray(ret->end,(void*)(j+1));
+	insertdarray(ret->end,(void*)(i+1));
       }
     }
     printf("\n");

@@ -23,6 +23,8 @@ struct graph{
 graph* initgraph(int size);
 node* createnode(int index);
 
+//#define graphaddedge(g,from,to)	 
+  
 void graphaddedge(graph *g,int from,int to);
 
 void topologysort(graph *g,int result[]); //result's size == g->nodenum

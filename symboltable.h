@@ -119,4 +119,7 @@ int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
   symbolitem *item=st->table[pos];
   item->attr=attr;
 }
+
+//=============================================
+int symboltsetattr(symboltable *table);
 #endif

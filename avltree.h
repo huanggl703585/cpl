@@ -28,6 +28,29 @@ struct avltree{
       int __pt=0;						\
       while(__pt>=0){						\
 	struct avltree *__cur=__arr[__pt--];			\
+	if(__cnt==maxnum)					\
+	  break;						\
+	recver[__cnt++]=__cur->key;				\
+	if(__cur->left!=NULL)					\
+	  __arr[++__pt]=__cur->left;					\
+	if(__cur->right!=NULL)						\
+	  __arr[++__pt]=__cur->right;					\
+      }									\
+    }									\
+    cnt=__cnt;								\
+  }while(0)							
+
+#define travelavltree_order(root,recver,maxnum,cnt)	\
+  do{							\
+    int __cnt=0;					\
+    if(root==NULL)					\
+      ;							\
+    else{						\
+      struct avltree *__arr[maxnum];				\
+      __arr[0]=root;						\
+      int __pt=0;						\
+      while(__pt>=0){						\
+	struct avltree *__cur=__arr[__pt--];			\
 	if(++__cnt==maxnum)					\
 	  break;						\
 	arraysortinsert(recver,maxnum,__cur->key);		\

@@ -1,0 +1,84 @@
+#ifndef __RE_SEQ_H
+#define __RE_SEQ_H
+
+#include "re.h"
+
+typedef struct re_seq re_seq;
+struct re_seq{
+  int symnum;
+  int opernum;
+  re_symbol *operands;
+  re_operator *operator;
+};
+
+re_seq* initreseq(int symnum,int opernum);
+
+/*
+  insert RE_END_SYMBOL in symbol_list
+  insert LEFTPARTH & RIGHTPARTH
+  insert CAT operand in operand_list
+*/
+void expandreseq(re_seq *seq);
+
+
+#define addoperatorhead(seq,_operator)			\
+  do{							\
+    re_operator *__tmp=createreoperator(_operator);	\
+    listadd(&(__tmp->list),&(seq->operator->list));	\
+    seq->opernum++;					\
+  }while(0)
+
+void insertresymbol(re_seq *seq,int index);
+void insertreoperator(re_seq *seq,int operator);
+re_operator* resymtooper(re_seq *seq,int symindex);
+
+
+re_seq* initreseq(int symnum,int opernum)
+{
+  re_seq* ret=(re_seq*)malloc(sizeof(re_seq));
+  ret->symnum=symnum;
+  ret->opernum=opernum;
+  ret->operands=initresymbol();
+  ret->operator=initreoperator();
+  return ret;
+}
+
+void expandreseq(re_seq *seq)
+{
+  seq->symnum++;
+  seq->opernum++;
+  insertresymbol(seq,RE_END_SYMBOL);
+  addoperatorhead(seq,LEFTPARTH);
+  insertreoperator(seq,CAT);
+  insertreoperator(seq,RIGHTPARTH);
+}
+
+void insertresymbol(re_seq *seq,int index)
+{
+  re_symbol* new=createresymbol(index);
+  listaddtail(&(new->list),&(seq->operands->list));
+}
+
+
+void insertreoperator(re_seq *seq,int operator)
+{
+  re_operator* new=createreoperator(operator);
+  listaddtail(&(new->list),&(seq->operator->list));
+}
+
+
+//point to 'next', for example:
+//symbol:   a    b      c
+//operator:CAT STAR OR STAR
+//point to the first non-STAR operator
+re_operator* resymtooper(re_seq *seq,int symindex)
+{
+  re_operator *ret=seq->operator;
+  for(int i=0;i<=symindex;i++){
+    if(ret->operator&(STAR|LEFTPARTH|RIGHTPARTH))
+      ret=list_next_entry(ret,list);
+    ret=list_next_entry(ret,list);
+  }
+  return ret;
+}
+#endif
