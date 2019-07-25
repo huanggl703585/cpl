@@ -51,6 +51,16 @@ void listdel(struct list_head *l)
   __list_del(l->prev,l->next);
 }
    
+void listreplace(struct list_head *origin,struct list_head *newhead)
+{
+  origin->prev->next=newhead->next;
+  origin->next->prev=newhead->prev;
+  newhead->next->prev=origin->prev;
+  newhead->prev->next=origin->next;
+  origin->prev=origin->next=origin;
+  newhead->prev=newhead->next=newhead;
+}
+
 
 #define list_entry(ptr,type,member)		\
   container_of(ptr,type,member)

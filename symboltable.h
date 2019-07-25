@@ -67,11 +67,13 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   memcpy(pt,str,len+1);
   item->name=pt;
   item->id=((st->count)+st->bias);
-  item->attr=attr;
+  if(attr!=NULL)
+    item->attr=attr;
+  else
+    item->attr=createsymbolattr(item->id);
   st->table[hashvalue]=item;
   st->idarray[st->bias+st->count]=hashvalue;
   st->count++;
-  item->attr=(symbolattr*)malloc(sizeof(symbolattr));
   return item->id;
 }
 
@@ -122,5 +124,17 @@ int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
 }
 
 //=============================================
+int symboladdedge(symboltable *table,int from,int to);
+
+int symboladdedge(symboltable *table,int from,int to)
+{
+  symbolitem *fi=searchsymboltablebyid(table,from);
+  node *fn=fi->attr->node;
+  symbolitem *ti=searchsymboltablebyid(table,to);
+  node *tn=ti->attr->node;
+  nodeaddedge(fn,tn);
+  return 0;
+}
+
 int symboltsetattr(symboltable *table);
 #endif

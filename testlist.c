@@ -20,12 +20,13 @@ int charisequal(void* a,void* b)
 
 int main()
 {
+  
   int a=1,b=5,c=4,d=3,m=100;
   kvpair c0,c1,c2,c3,c4;
   kvpair *k,*k1,*k2,*k3,*k4,*tmp;
   k=&c0;
   k1=&c1;k2=&c2;k3=&c3;k4=&c4;
-  //k->key=(void*)m;
+  k->key=(void*)m;
   k1->key=(void*)a;
   k2->key=(void*)b;
   k3->key=(void*)c;
@@ -36,6 +37,15 @@ int main()
   list_init(k3->list);
   list_init(k4->list);
 
+  listaddtail(&(k1->list),&(k->list));
+  listaddtail(&(k2->list),&(k4->list));
+  listaddtail(&(k3->list),&(k4->list));
+  listreplace(&(k1->list),&(k4->list));
+  
+  list_for_each_entry(tmp,&(k->list),list){
+    printf("%d ",(int)tmp->key);
+  }  
+  /*
   list_insert_order(k,list,key,k4,charcmp);
 
   list_insert_order(k,list,key,k1,charcmp);
@@ -58,4 +68,7 @@ int main()
   printf("\n%d ",(int)(tmp->key)); 
   list_find_key(tmp,k,list,key,6,charisequal);
   printf("\n%d ",(int)(tmp->key));
+  */
+
+  
 }

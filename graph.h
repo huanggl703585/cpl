@@ -24,7 +24,7 @@ graph* initgraph(int size);
 node* createnode(int index);
 
 //#define graphaddedge(g,from,to)	 
-  
+void nodeaddedge(node *from,node *to);  
 void graphaddedge(graph *g,int from,int to);
 
 void topologysort(graph *g,int result[]); //result's size == g->nodenum
@@ -46,6 +46,12 @@ node* createnode(int index)
   ret->index=index;
   list_init(ret->edge);
   return ret;
+}
+
+void nodeaddedge(node *from,node *to)
+{  
+  node *new=createnode(from->index);
+  listaddtail(&(new->edge),&(to->edge));
 }
 
 void graphaddedge(graph *g,int from,int to)
@@ -80,14 +86,102 @@ void topologysort(graph *g,int result[])
   }
 }
 
+//==========================stack version
+
+//in edge-list, the node index is the index of the nodearr
+#define initnode(node,_index)			\
+  node.index=_index;				\
+  list_init(node.edge)				\
+
+#define arraynodeaddedge(_nodearr,_from,_to,_pt)		\
+  do{								\
+    initnode(_nodearr[_pt],_from);				\
+    listaddtail(&(_nodearr[_pt].edge),&(_nodearr[_to].edge));	\
+    _pt++;							\
+  }while(0)
+
+void arraytopologysort(node nodearr[],int size,int result[]);
+void arraytopologysortsignfirst(node nodearr[],int size,int result[],int *sign);
+
+void arraytopologysort(node nodearr[],int size,int result[])
+{
+  int mark[size];
+  int tmpmark[size];
+  bzero(mark,size*sizeof(int));
+  int resultpt=0;
+  while(resultpt<size){
+    bzero(tmpmark,size*sizeof(int));
+    for(int i=0;i<size;i++){
+      if(mark[i]==0){
+	node *pos;
+	int canpush=1;
+	list_for_each_entry(pos,&(nodearr[i].edge),edge){
+	  if(mark[pos->index]==0)
+	    canpush=0;
+	}
+	if(canpush){
+	  tmpmark[i]=1;
+	  result[resultpt++]=i;
+	}
+      }
+    }
+    for(int i=0;i<size;i++){
+      if(tmpmark[i]==1)
+	mark[i]=1;
+    }
+  }
+}
+
+void arraytopologysortsignfirst(node nodearr[],int size,int result[],int *sign)
+{
+  int mark[size];
+  int tmpmark[size];
+  int first=0;
+  bzero(mark,size*sizeof(int));
+  int resultpt=0;
+  while(resultpt<size){
+    bzero(tmpmark,size*sizeof(int));
+    for(int i=0;i<size;i++){
+      if(mark[i]==0){
+	node *pos;
+	int canpush=1;
+	list_for_each_entry(pos,&(nodearr[i].edge),edge){
+	  if(mark[pos->index]==0)
+	    canpush=0;
+	}
+	if(canpush){
+	  tmpmark[i]=1;
+	  result[resultpt++]=i;
+	}
+      }
+    }
+    for(int i=0;i<size;i++){
+      if(tmpmark[i]==1)
+	mark[i]=1;
+    }
+    if(first==0){
+      first=1;
+      *sign=resultpt;
+    }
+  }
+}
+//==========================test/print
+void printnode(node *n);
+
 void printnode(node *n)
 {
   node *pt=n;
   printf("nodeindex %d\n",n->index);
-  while((pt=list_next_entry(pt,edge))!=n){
+  list_for_each_entry(pt,&(n->edge),edge){
     printf("%d %p\n",pt->index,pt);
   } 
   printf("\n");
+}
+
+void printnodearr(node nodearr[],int size)
+{
+  for(int i=0;i<size;i++)
+    printnode(&(nodearr[i]));
 }
 
 void printgraph(graph *g)
@@ -96,5 +190,7 @@ void printgraph(graph *g)
   for(int i=0;i<size;i++)
     printnode((g->nodearr[i]));
 }
+
+
 
 #endif

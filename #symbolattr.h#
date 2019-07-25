@@ -31,16 +31,6 @@ symbolattr *createsymbolattr(int index)
   return ret;
 }
 
-int symboladdedge(symboltable *table,int from,int to)
-{
-  symbolitem *fi=searchsymboltablebyid(table,from);
-  node *fn=fi->attr->node;
-  symbolitem *ti=searchsymboltablebyid(table,to);
-  node *tn=ti->attr->node;
-  nodeaddedge(fn,tn);
-  return 0;
-}
-
 /*
   non-terminal set type
   terminal set mapper
