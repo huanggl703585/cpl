@@ -4,6 +4,7 @@
 #include "graph.h"
 #include "production.h"
 #include "mapinput.h"
+#include "re_exp.h"
 
 #define NONTERMINAL1 1
 #define NONTERMINAL2 2
@@ -19,6 +20,7 @@ struct symbolattr{
     charmapper *mapper;
   }attr;
   node *node;
+  re_exp *reexp;
 };
 
 symbolattr *createsymbolattr(int index);
@@ -26,19 +28,9 @@ symbolattr *createsymbolattr(int index);
 symbolattr *createsymbolattr(int index)
 {
   symbolattr *ret=(symbolattr*)malloc(sizeof(symbolattr));
-  ret->attr=NULL;
+  ret->attr.prod=NULL;
   ret->node=createnode(index);
   return ret;
-}
-
-int symboladdedge(symboltable *table,int from,int to)
-{
-  symbolitem *fi=searchsymboltablebyid(table,from);
-  node *fn=fi->attr->node;
-  symbolitem *ti=searchsymboltablebyid(table,to);
-  node *tn=ti->attr->node;
-  nodeaddedge(fn,tn);
-  return 0;
 }
 
 /*

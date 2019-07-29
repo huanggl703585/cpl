@@ -18,9 +18,10 @@ struct symbolitem{
 
 struct symboltable{
   int size;
-  int count;
+  int count; //count is the number of symbol, not include bias
   int bias; //for idarray
   int *idarray;
+  int *toposort;
   symbolitem **table;
 };
 
@@ -40,9 +41,11 @@ symboltable *createsymboltable(size_t size,int bias)
   ret->count=0;
   ret->bias=bias;
   ret->idarray=(int*)malloc(sizeof(int)*(ret->size));
+  ret->toposort=(int*)malloc(sizeof(int)*(ret->size));
   ret->table=(symbolitem**)malloc(sizeof(symbolitem*)*(ret->size));
   bzero(ret->idarray,sizeof(int)*(ret->size));
   bzero(ret->table,sizeof(symbolitem*)*(ret->size));
+  bzero(ret->toposort,sizeof(int)*(ret->size));
   return ret;
 }
 
@@ -72,7 +75,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   else
     item->attr=createsymbolattr(item->id);
   st->table[hashvalue]=item;
-  st->idarray[st->bias+st->count]=hashvalue;
+  st->idarray[item->id]=hashvalue;
   st->count++;
   return item->id;
 }
@@ -137,4 +140,69 @@ int symboladdedge(symboltable *table,int from,int to)
 }
 
 int symboltsetattr(symboltable *table);
+
+void symboltoposort(symboltable *table);
+
+void symboltoposort(symboltable *table)
+{
+  //mind the difference of domain of table index and node index
+  int nodenum=table->count;
+  //size of nodearr is sum of node and edge
+  node nodearr[1024];
+  for(int i=0;i<nodenum;i++){
+    initnode(nodearr[i],i);
+  }
+  
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolattr *attr=item->attr;
+    production *prod=attr->attr.prod;
+    int head=prod->head;
+    productionbody *pbpos;
+    list_for_each_entry(pbpos,&(prod->productionbody->list),list){
+      pbody *pbody=pbpos->body;
+      slist *position;
+      list_for_each_entry(position,&(pbody->list),list){
+	int key=(int)(position->key);
+	if(key>=table->bias)
+	  if(key!=head)
+	    arraynodeaddedge(nodearr,key-table->bias,head-table->bias,nodenum);	
+      }
+    }
+  }
+  arraytopologysort(nodearr,nodenum,table->toposort);
+  for(int i=0;i<table->count;i++)
+    table->toposort[i]+=table->bias;
+}
+//========================print/test
+void printproductionwithname(symboltable *table);
+
+void printproductionwithname(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolattr *attr=item->attr;
+    production *prod=attr->attr.prod;
+    int head=prod->head;
+    item=searchsymboltablebyid(table,head);
+    printf("head %s\n",item->name);
+    productionbody *pbpos;
+    list_for_each_entry(pbpos,&(prod->productionbody->list),list){
+      pbody *pbody=pbpos->body;
+      slist *position;
+      list_for_each_entry(position,&(pbody->list),list){
+	printf("  ");
+	int body=(int)(position->key);
+	if(body<table->bias)
+	  printf("%c ",(char)body);
+	else{
+	  item=searchsymboltablebyid(table,body);
+	  printf("%s ",item->name);
+	}
+      }
+      printf("\n");
+    }
+    printf("\n");
+  }
+}
 #endif

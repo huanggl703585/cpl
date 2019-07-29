@@ -66,6 +66,17 @@ re_operator* createreoperator(int operator)
 
 
 //=====================for test/print
+#define _printreoperator(index)			\
+  do{						\
+    switch(index){				\
+    case STAR:{printf(" * ");break;}		\
+    case CAT: {printf(" o ");break;}		\
+    case OR:  {printf(" | ");break;}		\
+    case LEFTPARTH: {printf(" ( ");break;}	\
+    case RIGHTPARTH: {printf(" ) ");break;}	\
+    }						\
+  } while(0)
+
 void travelresymbol(re_symbol *sym);
 
 void travelresymbol(re_symbol *sym)

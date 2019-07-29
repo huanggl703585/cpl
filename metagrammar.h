@@ -49,7 +49,7 @@ int buildmetagrammar()
   appendprodbody(pbpos,array[3]);
   pbpos=createproductionbody(ppos);
   appendprodbody(pbpos,array[1]);
-  appendprodbody(pbpos,array[4]);
+  appendprodbody(pbpos,array[2]);
   
   //equivalence ::= ':' ':' '='
   spos=searchsymboltablebyid(table,array[4]);
@@ -73,10 +73,19 @@ int buildmetagrammar()
   ppos=spos->attr->attr.prod=createproduction(array[3]);
   appendprodrange(ppos,'0','9');
 
+  /*
   for(int i=0;i<5;i++){
     spos=searchsymboltablebyid(table,array[i]);
     printproduction(spos->attr->attr.prod);
   }
+  */
+  symboltoposort(table);
+  
+  for(int i=0;i<table->count;i++){
+    spos=searchsymboltablebyid(table,table->toposort[i]);
+    printf("%s\n",spos->name);
+    }
+  //printproductionwithname(table);
   return 1;
 }
 
