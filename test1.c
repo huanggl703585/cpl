@@ -6,6 +6,6 @@
 int main()
 {
   char *hw="world";
-  symbolderivename(hello,hw);
+  symbolderivename(hello,hw,3);
   printf("%d %s",strlen(hello),hello);
 }

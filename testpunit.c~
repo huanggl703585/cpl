@@ -1,0 +1,27 @@
+
+#include "production.h"
+
+int main()
+{
+  production* ppos;
+  productionbody *pbpos;
+  ppos=createproduction(2);
+  pbpos=createproductionbody(ppos);
+  appendprodbody(pbpos,3);
+  appendprodbody(pbpos,'(');
+  appendprodbody(pbpos,4);
+  appendprodbody(pbpos,')');
+
+  pbody *p1=pbpos->body;
+  pbody *p1h=p1;
+  pbody *p2;
+  int len;
+  pbodygetnextunit(p1,p1h,p2,len);
+  printpbodyunit(p2,len);
+  
+  pbpos=createproductionbody(ppos);
+  appendprodbody(pbpos,3);
+  appendprodbody(pbpos,5);
+
+ 
+}

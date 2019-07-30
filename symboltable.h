@@ -13,6 +13,7 @@ typedef struct symbolitem symbolitem;
 struct symbolitem{
   int id; //id starts from 0
   char *name;
+  int derivecnt;
   symbolattr *attr;
 };
 
@@ -72,6 +73,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   memcpy(pt,str,len+1);
   item->name=pt;
   item->id=((st->count)+st->bias);
+  item->derivecnt=0;
   if(attr!=NULL)
     item->attr=attr;
   else
@@ -129,19 +131,55 @@ int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
 }
 
 //============================================
-#define symbolderivename(newname,oriname)			\
-  char *newname=(char*)malloc(strlen(oriname)+2);		\
-  sprintf(newname,"_%s",oriname)
+#define symbolderivename(newname,oriname,ulen)			\
+  char *newname=(char*)malloc(strlen(oriname)+1+ulen);		\
+  do{								\
+    char padding[ulen+1];					\
+    for(int i=0;i<ulen;i++) padding[i]='_';			\
+    padding[ulen]='\0';						\
+    sprintf(newname,"%s%s",padding,oriname);			\
+  }while(0)
 
-int derivenewsymbol(symboltable *table,symbolitem *origin);
-
+//TODO
 int derivenewsymbol(symboltable *table,symbolitem *origin)
 {
   symbolattr *attr;
-  symbolderivename(newname,origin->name);
+  symbolderivename(newname,origin->name,++(origin->derivecnt));
   return insertsymboltable(table,newname,attr);
 }
 
+void extractleftlcp(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=table->toposort[i];
+    production *prod=item->attr.attr->prod;
+    int flag=1;
+    int pcnt=prod->cnt;
+    while(flag){
+      prodfindlcp(prod,mark,res,lcp,len,restlen);
+      if(listisempty(lcp->list)){
+	flag=0;
+	//TODO: DOES IT RIGHT?
+	continue;
+      }
+      int id=derivenewsymbol(table,item);
+      symbolitem *newitem=searchsymboltablebyid(id);
+      production *newprod=newitem->attr.attr->prod;
+      productionbody *pbpos=prod->productionbody;
+      for(int i=0;i<pcnt && mark[pcnt]==1;i++){
+	pbpos=prodbodynext(pbpos);
+	productiondrop(prod,
+	if(restlen[i]!=0){
+	  productionbody *pb=createprodbodywithpbody(res[i],restlen[i]);
+	  productionappend(newprod,pb);
+	}
+      }
+      productionbody *lcppb=createprodbodywithpbody(lcp,len);
+      appendprodbody(lcppb,id);
+      productionappend(prod,lcppb);
+    }
+  }
+}
 //=============================================
 
 void symboltoposort(symboltable *table);
