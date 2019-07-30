@@ -1,4 +1,4 @@
-
+#include "symboltable.h"
 #include "production.h"
 
 int main()

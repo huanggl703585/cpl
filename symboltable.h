@@ -151,8 +151,8 @@ int derivenewsymbol(symboltable *table,symbolitem *origin)
 void extractleftlcp(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
-    symbolitem *item=table->toposort[i];
-    production *prod=item->attr.attr->prod;
+    symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
+    production *prod=item->attr->attr.prod;
     int flag=1;
     int pcnt=prod->cnt;
     while(flag){
@@ -163,12 +163,11 @@ void extractleftlcp(symboltable *table)
 	continue;
       }
       int id=derivenewsymbol(table,item);
-      symbolitem *newitem=searchsymboltablebyid(id);
-      production *newprod=newitem->attr.attr->prod;
-      productionbody *pbpos=prod->productionbody;
-      for(int i=0;i<pcnt && mark[pcnt]==1;i++){
-	pbpos=prodbodynext(pbpos);
-	productiondrop(prod,
+      symbolitem *newitem=searchsymboltablebyid(table,id);
+      production *newprod=newitem->attr->attr.prod;
+      productionbody *pbpos=prodbodynext(prod->productionbody);
+      for(int i=0;i<pcnt && mark[pcnt]==1;i++,pbpos=prodbodynext(pbpos)){
+	productiondrop(prod,pbpos);
 	if(restlen[i]!=0){
 	  productionbody *pb=createprodbodywithpbody(res[i],restlen[i]);
 	  productionappend(newprod,pb);
