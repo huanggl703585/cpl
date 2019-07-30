@@ -1,7 +1,7 @@
 #ifndef __RE_SEQ_H
 #define __RE_SEQ_H
 
-#include "re.h"
+#include "re_exp.h"
 
 typedef struct re_seq re_seq;
 struct re_seq{
@@ -11,8 +11,7 @@ struct re_seq{
   re_operator *operator;
 };
 
-re_seq* initreseq(int symnum,int opernum);
-
+re_seq *createreseq();
 /*
   insert RE_END_SYMBOL in symbol_list
   insert LEFTPARTH & RIGHTPARTH
@@ -32,12 +31,10 @@ void insertresymbol(re_seq *seq,int index);
 void insertreoperator(re_seq *seq,int operator);
 re_operator* resymtooper(re_seq *seq,int symindex);
 
-
-re_seq* initreseq(int symnum,int opernum)
+re_seq *createreseq()
 {
-  re_seq* ret=(re_seq*)malloc(sizeof(re_seq));
-  ret->symnum=symnum;
-  ret->opernum=opernum;
+  re_seq *ret=(re_seq*)malloc(sizeof(re_seq));
+  ret->symnum=ret->opernum=0;
   ret->operands=initresymbol();
   ret->operator=initreoperator();
   return ret;
@@ -57,6 +54,7 @@ void insertresymbol(re_seq *seq,int index)
 {
   re_symbol* new=createresymbol(index);
   listaddtail(&(new->list),&(seq->operands->list));
+  seq->symnum++;
 }
 
 
@@ -64,6 +62,7 @@ void insertreoperator(re_seq *seq,int operator)
 {
   re_operator* new=createreoperator(operator);
   listaddtail(&(new->list),&(seq->operator->list));
+  seq->opernum++;
 }
 
 
@@ -139,6 +138,22 @@ re_operator* getnextoperator(re_iterator *iter)
   re_operator *ret=iter->operator;
   iter->operator=nextoperator(iter->operator);
  
+  return ret;
+}
+
+//============================================
+re_seq *reexptoreseq(re_exp *exp);
+
+re_seq *reexptoreseq(re_exp *exp)
+{
+  re_seq *ret=createreseq();
+  re_exp *pos;
+  list_for_each_entry(pos,&(exp->list),list){
+    if(pos->type==OPERATOR)
+      insertreoperator(ret,pos->id);
+    else
+      insertresymbol(ret,pos->id);
+  }
   return ret;
 }
 #endif

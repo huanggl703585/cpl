@@ -61,6 +61,13 @@ void listreplace(struct list_head *origin,struct list_head *newhead)
   newhead->prev=newhead->next=newhead;
 }
 
+void listappend(struct list_head *head,struct list_head *new)
+{
+  head->prev->next=new->next;
+  new->next->prev=head->prev;
+  head->prev=new->prev;
+  new->prev->next=head;
+}
 
 #define list_entry(ptr,type,member)		\
   container_of(ptr,type,member)

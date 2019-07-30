@@ -40,7 +40,7 @@ int main()
   listaddtail(&(k1->list),&(k->list));
   listaddtail(&(k2->list),&(k4->list));
   listaddtail(&(k3->list),&(k4->list));
-  listreplace(&(k1->list),&(k4->list));
+  listappend(&(k->list),&(k4->list));
   
   list_for_each_entry(tmp,&(k->list),list){
     printf("%d ",(int)tmp->key);

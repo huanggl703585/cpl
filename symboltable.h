@@ -22,6 +22,7 @@ struct symboltable{
   int bias; //for idarray
   int *idarray;
   int *toposort;
+  int topofirst;
   symbolitem **table;
 };
 
@@ -42,6 +43,7 @@ symboltable *createsymboltable(size_t size,int bias)
   ret->bias=bias;
   ret->idarray=(int*)malloc(sizeof(int)*(ret->size));
   ret->toposort=(int*)malloc(sizeof(int)*(ret->size));
+  ret->topofirst=0;
   ret->table=(symbolitem**)malloc(sizeof(symbolitem*)*(ret->size));
   bzero(ret->idarray,sizeof(int)*(ret->size));
   bzero(ret->table,sizeof(symbolitem*)*(ret->size));
@@ -126,22 +128,24 @@ int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
   item->attr=attr;
 }
 
-//=============================================
-int symboladdedge(symboltable *table,int from,int to);
+//============================================
+#define symbolderivename(newname,oriname)			\
+  char *newname=(char*)malloc(strlen(oriname)+2);		\
+  sprintf(newname,"_%s",oriname)
 
-int symboladdedge(symboltable *table,int from,int to)
+int derivenewsymbol(symboltable *table,symbolitem *origin);
+
+int derivenewsymbol(symboltable *table,symbolitem *origin)
 {
-  symbolitem *fi=searchsymboltablebyid(table,from);
-  node *fn=fi->attr->node;
-  symbolitem *ti=searchsymboltablebyid(table,to);
-  node *tn=ti->attr->node;
-  nodeaddedge(fn,tn);
-  return 0;
+  symbolattr *attr;
+  symbolderivename(newname,origin->name);
+  return insertsymboltable(table,newname,attr);
 }
 
-int symboltsetattr(symboltable *table);
+//=============================================
 
 void symboltoposort(symboltable *table);
+void prodsettoreexp(symboltable *table);
 
 void symboltoposort(symboltable *table)
 {
@@ -170,9 +174,14 @@ void symboltoposort(symboltable *table)
       }
     }
   }
-  arraytopologysort(nodearr,nodenum,table->toposort);
+  arraytopologysortsignfirst(nodearr,nodenum,table->toposort,&(table->topofirst));
   for(int i=0;i<table->count;i++)
     table->toposort[i]+=table->bias;
+}
+
+void prodsettoreexp(symboltable *table)
+{
+  
 }
 //========================print/test
 void printproductionwithname(symboltable *table);
