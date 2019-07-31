@@ -15,7 +15,7 @@ struct list_head{
 #define SLIST_HEAD_INIT(name) {&(name)}
 
 #define listisempty(list)			\
-  (list.prev==list.next)
+  (list.prev==(&list) && list.next==(&list))
 
 void __list_add(struct list_head *new,
 		struct list_head *next,

@@ -11,18 +11,51 @@
 //we assume the the head of pbody is 0(NULL)  
 typedef slist pbody;
 
+
 #define createpbody(pos) 					\
   do{									\
     initslist(__newpbody,NULL);						\
     pos=__newpbody;							\
   }while(0)
 
+/*
+pbody *createpbody()
+{
+  pbody *ret=(pbody*)malloc(sizeof(pbody));
+  ret->key=NULL;
+  list_init(ret->list);
+  return ret;
+  }*/
+
+void appendpbody(pbody *listhead,int elem)
+{
+  initslist(tmp,elem);
+  appendslist(tmp,listhead);
+}
+/*
 #define appendpbody(listhead,elem)		\
   do{						\
-    initslist(__newpbody,elem);			\
-    appendslist(__newpbody,listhead);		\
+     initslist(__newpbody,elem);		\
+     appendslist(__newpbody,listhead);		\
   }while(0)
+*/
+#define getpbodykey(body)			\
+  (int)(body->key)				
 
+#define getpbodynext(body)			\
+  list_next_entry(body,list)
+
+void pbodyappendlistwithlen(pbody *listhead,pbody *newlist,int len)
+{
+  int tmp=len;						
+  pbody *pos=newlist;						
+  while(tmp--){						
+    pos=getpbodynext(pos);					
+    int key=getpbodykey(pos);					
+    appendpbody(listhead,key);				
+  }
+}
+/*	
 #define pbodyappendlistwithlen(listhead,newlist,len)		\
   do{								\
     int tmp=len;						\
@@ -33,12 +66,7 @@ typedef slist pbody;
       appendpbody(listhead,key);				\
     }								\
   }while(0)
-
-#define getpbodykey(body)			\
-  (int)(body->key)				
-
-#define getpbodynext(body)			\
-  list_next_entry(body,list)
+*/
 
 typedef struct productionbody productionbody;
 struct productionbody{
@@ -233,18 +261,17 @@ int pbodyunitequal(pbody *u1,int ulen1,pbody *u2,int ulen2)
   return 1;
 }
     
-#define printpbodyunit(body,len)		\
-  do{						\
-    printf("len %d\t",len);			\
-    pbody* pos=getpbodynext(body);		\
-    int tmp=len;				\
-    while(tmp--){				\
-      int key=getpbodykey(pos);			\
-      printf("%d ",key);			\
-      pos=getpbodynext(pos);			\
-    }						\
-    printf("\n");				\
-  }while(0)
+void printpbodyunit(pbody *body,int len){
+  printf("len %d\t",len);			
+  pbody* pos=getpbodynext(body);		
+  int tmp=len;				
+  while(tmp--){				
+    int key=getpbodykey(pos);			
+    printf("%d ",key);			
+    pos=getpbodynext(pos);			
+  }						
+  printf("\n");				
+}
 
 //longest common prefix
 //in:prod ; out: other
@@ -279,7 +306,7 @@ int pbodyunitequal(pbody *u1,int ulen1,pbody *u2,int ulen2)
       }									\
       pbody *same;							\
       createpbody(same);						\
-      int cmplen;							\
+      int cmplen=0;							\
       int cflag=1;							\
       for(int i=0;i<_prod->cnt && _mark[i]==1 && cflag;i++){		\
 	for(int j=i+1;j<_prod->cnt && _mark[j]==1 && cflag;j++){	\
@@ -293,7 +320,6 @@ int pbodyunitequal(pbody *u1,int ulen1,pbody *u2,int ulen2)
 	  }								\
 	}								\
       }									\
-      printf("%d ",cmplen);						\
       if(cflag==1)							\
 	flag=0;								\
       else{								\
@@ -310,7 +336,7 @@ int pbodyunitequal(pbody *u1,int ulen1,pbody *u2,int ulen2)
     }									\
     for(int i=0;i<_prod->cnt && _mark[i]==0;i++)			\
       _res[i]=origin[i];						\
-  }while(0)
+  }while(0)						
 
 //====================print/test
 void printproduction(production *prod);

@@ -6,8 +6,8 @@
 #include "mapinput.h"
 #include "re_exp.h"
 
-#define NONTERMINAL1 1
-#define NONTERMINAL2 2
+#define NONTERMINAL  1
+#define TERMINALSET  2
 #define TERMINAL     3
 
 struct symbolattr;
@@ -23,13 +23,12 @@ struct symbolattr{
   re_exp *reexp;
 };
 
-symbolattr *createsymbolattr(int index);
+symbolattr *createsymbolattr();
 
-symbolattr *createsymbolattr(int index)
+symbolattr *createsymbolattr()
 {
   symbolattr *ret=(symbolattr*)malloc(sizeof(symbolattr));
   ret->attr.prod=NULL;
-  ret->node=createnode(index);
   return ret;
 }
 
@@ -37,12 +36,13 @@ symbolattr *createsymbolattr(int index)
   non-terminal set type
   terminal set mapper
 */
-int ntsymbolsetattr(symbolattr *attr);
-int tsymbolappendmapper(symbolattr *attr,int map);
+void symbolsetattr(symbolattr *attr);
 
-int ntsymbolsetattr(symbolattr *attr)
+void symbolsetattr(symbolattr *attr)
 {
-  production *ppos=attr->attr.prod;
-  return 1;
+  production *prod=attr->attr.prod;
+  int isset=prodisterminalset(prod);
+  if(isset) attr->type=TERMINALSET;
+  else attr->type=NONTERMINAL;
 }
 #endif

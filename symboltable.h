@@ -77,7 +77,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   if(attr!=NULL)
     item->attr=attr;
   else
-    item->attr=createsymbolattr(item->id);
+    item->attr=createsymbolattr();
   st->table[hashvalue]=item;
   st->idarray[item->id]=hashvalue;
   st->count++;
@@ -140,49 +140,73 @@ int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
     sprintf(newname,"%s%s",padding,oriname);			\
   }while(0)
 
-//TODO
 int derivenewsymbol(symboltable *table,symbolitem *origin)
 {
-  symbolattr *attr;
-  symbolderivename(newname,origin->name,++(origin->derivecnt));
+  symbolattr *attr=createsymbolattr();
+  origin->derivecnt++;
+  symbolderivename(newname,origin->name,origin->derivecnt);
   return insertsymboltable(table,newname,attr);
 }
 
-void extractleftlcp(symboltable *table)
+//for one symbol
+void extractleftlcpone(symboltable *table,int id)
 {
-  for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
-    production *prod=item->attr->attr.prod;
-    int flag=1;
-    int pcnt=prod->cnt;
-    while(flag){
-      prodfindlcp(prod,mark,res,lcp,len,restlen);
-      if(listisempty(lcp->list)){
-	flag=0;
-	//TODO: DOES IT RIGHT?
-	continue;
-      }
-      int id=derivenewsymbol(table,item);
-      symbolitem *newitem=searchsymboltablebyid(table,id);
-      production *newprod=newitem->attr->attr.prod;
-      productionbody *pbpos=prodbodynext(prod->productionbody);
-      for(int i=0;i<pcnt && mark[pcnt]==1;i++,pbpos=prodbodynext(pbpos)){
+  symbolitem *item=searchsymboltablebyid(table,id);
+  if(item->attr->type==TERMINALSET)
+    return ;
+  production *prod=item->attr->attr.prod;
+  int pcnt=prod->cnt;
+  while(1){
+    prodfindlcp(prod,mark,res,lcp,len,restlen);
+    
+    if(listisempty(lcp->list)){
+      break;
+    }
+    int newid=derivenewsymbol(table,item);
+    symbolitem *newitem=searchsymboltablebyid(table,newid);
+    newitem->attr->attr.prod=createproduction(newid);
+    production *newprod=newitem->attr->attr.prod;
+    productionbody *pbpos=prodbodynext(prod->productionbody);
+    for(int i=0;i<pcnt;i++){
+      productionbody *tmp=prodbodynext(pbpos);
+      if(mark[i]==1){
 	productiondrop(prod,pbpos);
+	printslist(pbpos->body);
 	if(restlen[i]!=0){
 	  productionbody *pb=createprodbodywithpbody(res[i],restlen[i]);
 	  productionappend(newprod,pb);
 	}
       }
-      productionbody *lcppb=createprodbodywithpbody(lcp,len);
-      appendprodbody(lcppb,id);
-      productionappend(prod,lcppb);
+      pbpos=tmp;
     }
+    productionbody *lcppb=createprodbodywithpbody(lcp,len);
+    appendprodbody(lcppb,newid);
+    productionappend(prod,lcppb);
+  }
+}
+
+//UNTEST
+void extractleftlcp(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    int id=i+table->bias;
+    
+    extractleftlcpone(table,id);
   }
 }
 //=============================================
-
+void symbolsettype(symboltable *table);
 void symboltoposort(symboltable *table);
 void prodsettoreexp(symboltable *table);
+
+void symbolsettype(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolattr *attr=item->attr;
+    symbolsetattr(attr);
+  }
+}
 
 void symboltoposort(symboltable *table)
 {
@@ -236,8 +260,8 @@ void printproductionwithname(symboltable *table)
     list_for_each_entry(pbpos,&(prod->productionbody->list),list){
       pbody *pbody=pbpos->body;
       slist *position;
+      printf("  ");
       list_for_each_entry(position,&(pbody->list),list){
-	printf("  ");
 	int body=(int)(position->key);
 	if(body<table->bias)
 	  printf("%c ",(char)body);

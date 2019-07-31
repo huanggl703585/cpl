@@ -1,4 +1,4 @@
-#include "symboltable.h"
+
 #include "production.h"
 
 int main()
@@ -60,6 +60,6 @@ int main()
   printf("\n%d\n",len);
   printpbodyunit(lcp,len);
   for(int i=0;i<ppos->cnt;i++)
-    printf("%d %d\n",mark[i],restlen[i]);
+    printf("%d %d",mark[i],restlen[i]);
 
 }

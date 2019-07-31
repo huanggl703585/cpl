@@ -39,8 +39,8 @@ int buildmetagrammar()
   pbpos=createproductionbody(ppos);
   appendprodbody(pbpos,array[4]);
 
-  re_exp *tmp=productiontoreexp(ppos);
-  printreexp(tmp);
+  //re_exp *tmp=productiontoreexp(ppos);
+  //printreexp(tmp);
 
 
   //identifier ::= identifier-nondigit
@@ -64,7 +64,7 @@ int buildmetagrammar()
   appendprodbody(pbpos,':');
   appendprodbody(pbpos,':');
   appendprodbody(pbpos,'=');
-  
+
   //identifier-nondigit 
   spos=searchsymboltablebyid(table,array[2]);
   ppos=spos->attr->attr.prod=createproduction(array[2]);
@@ -87,6 +87,9 @@ int buildmetagrammar()
     }*/
   //printproductionwithname(table);
  
+  symbolsettype(table);
+  extractleftlcp(table);
+  printproductionwithname(table);
   return 1;
 }
 
