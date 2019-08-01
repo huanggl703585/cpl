@@ -79,16 +79,15 @@ int buildmetagrammar()
   ppos=spos->attr->attr.prod=createproduction(array[3]);
   appendprodrange(ppos,'0','9');
 
-  symboltoposort(table);
-  /*  
-  for(int i=0;i<table->count;i++){
-    spos=searchsymboltablebyid(table,table->toposort[i]);
-    printf("%s\n",spos->name);
-    }*/
+  
+  
   //printproductionwithname(table);
- 
   symbolsettype(table);
   extractleftlcp(table);
+  elimateleftrecursion(table);
+  symboltoposort(table);
+  //prodsettoreexp(table);
+  //printreexpset(table);
   printproductionwithname(table);
   return 1;
 }

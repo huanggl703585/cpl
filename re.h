@@ -69,11 +69,11 @@ re_operator* createreoperator(int operator)
 #define _printreoperator(index)			\
   do{						\
     switch(index){				\
-    case STAR:{printf(" * ");break;}		\
-    case CAT: {printf(" o ");break;}		\
-    case OR:  {printf(" | ");break;}		\
-    case LEFTPARTH: {printf(" ( ");break;}	\
-    case RIGHTPARTH: {printf(" ) ");break;}	\
+    case STAR:{printf("*");break;}		\
+    case CAT: {printf("o");break;}		\
+    case OR:  {printf("|");break;}		\
+    case LEFTPARTH: {printf("(");break;}	\
+    case RIGHTPARTH: {printf(")");break;}	\
     }						\
   } while(0)
 

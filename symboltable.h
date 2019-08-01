@@ -142,13 +142,14 @@ int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
 
 int derivenewsymbol(symboltable *table,symbolitem *origin)
 {
-  symbolattr *attr=createsymbolattr();
+  //symbolattr *attr=createsymbolattr();
   origin->derivecnt++;
   symbolderivename(newname,origin->name,origin->derivecnt);
-  return insertsymboltable(table,newname,attr);
+  return insertsymboltable(table,newname,NULL);
 }
 
 //for one symbol
+//it rely on symbolsettype
 void extractleftlcpone(symboltable *table,int id)
 {
   symbolitem *item=searchsymboltablebyid(table,id);
@@ -162,6 +163,8 @@ void extractleftlcpone(symboltable *table,int id)
     if(listisempty(lcp->list)){
       break;
     }
+    //we should promise that no empty symbol
+    int hasempty=0;
     int newid=derivenewsymbol(table,item);
     symbolitem *newitem=searchsymboltablebyid(table,newid);
     newitem->attr->attr.prod=createproduction(newid);
@@ -176,10 +179,15 @@ void extractleftlcpone(symboltable *table,int id)
 	  productionbody *pb=createprodbodywithpbody(res[i],restlen[i]);
 	  productionappend(newprod,pb);
 	}
+	else
+	  hasempty=1;
       }
       pbpos=tmp;
     }
     productionbody *lcppb=createprodbodywithpbody(lcp,len);
+    if(hasempty==1){
+      productionappend(prod,lcppb);
+    }
     appendprodbody(lcppb,newid);
     productionappend(prod,lcppb);
   }
@@ -194,19 +202,8 @@ void extractleftlcp(symboltable *table)
     extractleftlcpone(table,id);
   }
 }
-//=============================================
-void symbolsettype(symboltable *table);
+//===============================toposort
 void symboltoposort(symboltable *table);
-void prodsettoreexp(symboltable *table);
-
-void symbolsettype(symboltable *table)
-{
-  for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
-    symbolattr *attr=item->attr;
-    symbolsetattr(attr);
-  }
-}
 
 void symboltoposort(symboltable *table)
 {
@@ -235,14 +232,107 @@ void symboltoposort(symboltable *table)
       }
     }
   }
-  arraytopologysortsignfirst(nodearr,nodenum,table->toposort,&(table->topofirst));
+  arraytopologysort(nodearr,table->count,table->toposort);
   for(int i=0;i<table->count;i++)
     table->toposort[i]+=table->bias;
 }
 
+//========================left recursion
+void elimateleftrecursion(symboltable *table);
+
+//it rely on extract left lcp
+void elimateleftrecursion(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    production *prod=item->attr->attr.prod;
+    productionbody *pbpos;
+    //because we have extracted left lcp, so just have one left-recursion production
+    list_for_each_entry(pbpos,&(prod->productionbody->list),list){
+      if(prodhaveleftrecursion(prod,pbpos)==1){
+	int newid=derivenewsymbol(table,item);
+	symbolitem *newitem=searchsymboltablebyid(table,newid);
+	newitem->attr->attr.prod=createproduction(newid);
+	production *newprod=newitem->attr->attr.prod;
+	pbody *head=getpbodynext(pbpos->body);
+	int newpblen=pbpos->cnt-1;
+	//printslist(head);
+	//printslist(pbpos->body);
+	//printf("newpblen %d ",newpblen);
+	//printpbodyunit(pbody,newpblen);
+	productionbody *newpb=createprodbodywithpbody(head,newpblen);
+	appendprodbody(newpb,newid);
+	productionappend(newprod,newpb);
+
+	productionbody *tmp=prodbodynext(prod->productionbody);
+	int pcnt=prod->cnt;
+	for(int i=0;i<pcnt;i++){ 
+	  if(tmp!=pbpos){
+	    productionbody *copypb=createprodbodywithpbody(tmp->body,tmp->cnt);
+	    productionappend(prod,copypb);
+	    appendprodbody(tmp,newid);
+	  }
+	  tmp=prodbodynext(tmp);
+	}
+	
+	productiondrop(prod,pbpos);
+      }
+    }
+  }
+}
+
+//========================re_exp
+//solve left recursion before
+void symbolsettype(symboltable *table);
+void prodsettoreexp(symboltable *table);
+void symbolreexptransit(symboltable *table,re_exp *re);
+void printreexpset(symboltable *table); 
+
+void symbolsettype(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolattr *attr=item->attr;
+    symbolsetattr(attr);
+  }
+}
+
 void prodsettoreexp(symboltable *table)
 {
-  
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
+    symbolattr *attr=item->attr;
+    if(attr->type==TERMINALSEQ || attr->type==NONTERMINAL){
+      re_exp *re=productiontoreexp(attr->attr.prod);
+      printreexp(re);
+      if(attr->type==NONTERMINAL)
+	symbolreexptransit(table,re);
+      attr->reexp=re;
+    }
+  }
+}
+
+void symbolreexptransit(symboltable *table,re_exp *re)
+{
+  re_exp *pos;
+  list_for_each_entry(pos,&(re->list),list){
+    if(pos->type==OPERAND){
+      int id=pos->id;
+      symbolitem *item=searchsymboltablebyid(table,id);
+      if(item->attr->type==NONTERMINAL || item->attr->type==TERMINALSEQ){
+	re_exp *replace=item->attr->reexp;
+	reexpreplace(pos,replace);
+      }
+    }
+  }
+}
+
+void printreexpset(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
+    printreexp(item->attr->reexp);
+  }
 }
 //========================print/test
 void printproductionwithname(symboltable *table);
@@ -255,9 +345,10 @@ void printproductionwithname(symboltable *table)
     production *prod=attr->attr.prod;
     int head=prod->head;
     item=searchsymboltablebyid(table,head);
-    printf("head %s\n",item->name);
+    printf("head %s cnt %d\n",item->name,prod->cnt);
     productionbody *pbpos;
     list_for_each_entry(pbpos,&(prod->productionbody->list),list){
+      printf("cnt %d\n",pbpos->cnt);
       pbody *pbody=pbpos->body;
       slist *position;
       printf("  ");

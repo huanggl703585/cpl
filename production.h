@@ -55,18 +55,6 @@ void pbodyappendlistwithlen(pbody *listhead,pbody *newlist,int len)
     appendpbody(listhead,key);				
   }
 }
-/*	
-#define pbodyappendlistwithlen(listhead,newlist,len)		\
-  do{								\
-    int tmp=len;						\
-    pbody *pos=newlist;						\
-    while(tmp--){						\
-      pos=getpbodynext(pos);					\
-      int key=getpbodykey(pos);					\
-      appendpbody(listhead,key);				\
-    }								\
-  }while(0)
-*/
 
 typedef struct productionbody productionbody;
 struct productionbody{
@@ -84,12 +72,6 @@ struct productionbody{
 #define prodbodynext(prodbody)			\
   list_next_entry(prodbody,list)
 
-#define prodhaveleftrecursion(prod,prodbody) ({	\
-  int __head=prod->head;			\
-  pbody *__pos=prodbodyfirstelem(prodbody);	\
-  int __elem=(int)(__pos->key);			\
-  int __res=(__elem==__head);			\
-  __res;})
 
 typedef struct production production;
 struct production{
@@ -116,7 +98,6 @@ struct production{
     for(int __i=lower;__i<=upper;__i++){			\
       productionbody *__pbpos=createproductionbody(prod);	\
       appendprodbody(__pbpos,__i);				\
-      __pbpos->cnt++;						\
     }								\
     prod->cnt+=(upper-lower+1);					\
   }while(0)
@@ -156,6 +137,7 @@ productionbody *createprodbodywithpbody(pbody *body,int cnt)
 {
   productionbody *ret=_createproductionbody();
   pbodyappendlistwithlen(ret->body,body,cnt);
+  ret->cnt=cnt;
   return ret;
 }
 
@@ -197,19 +179,37 @@ re_exp *_productiontoreexp(productionbody *prodbody)
 {
   re_exp *ret=createreexp();
   pbody *pos;
+  int isfirst=1;
   list_for_each_entry(pos,&(prodbody->body->list),list){
     int key=(int)(pos->key);
     if(ispunctuate(key))
       reexpappend(ret,OPERATOR,key);
-    else
+    else{
+      if(isfirst) isfirst=0;
+      else reexpappend(ret,OPERATOR,CAT);
       reexpappend(ret,OPERAND,key);
+    }
   }
   return ret;
 }
 
 //====================
-//a non-terminal, each production contains only a terminal symbol
+int prodhasnonterminal(production *prod);
 int prodisterminalset(production *prod);
+
+int prodhasnonterminal(production *prod)
+{
+  productionbody *pbpos;
+  list_for_each_entry(pbpos,&(prod->productionbody->list),list){
+    pbody *tmp;
+    list_for_each_entry(tmp,&(pbpos->body->list),list){
+      int key=(int)(tmp->key);
+      if(key>=127)
+	return 1;
+    }
+  }
+  return 0;
+}
 
 int prodisterminalset(production *prod)
 {
@@ -220,8 +220,6 @@ int prodisterminalset(production *prod)
     int cnt=0;
     list_for_each_entry(tmp,&(pbpos->body->list),list){
       if((cnt++)==1) return 0;
-      int key=(int)(tmp->key);
-      if(key>127) return 0;
     }
   }
   return 1;
@@ -336,8 +334,30 @@ void printpbodyunit(pbody *body,int len){
     }									\
     for(int i=0;i<_prod->cnt && _mark[i]==0;i++)			\
       _res[i]=origin[i];						\
-  }while(0)						
+  }while(0)
 
+//====================left recursion
+#define prodhaveleftrecursion(prod,prodbody) ({	\
+  int __head=prod->head;			\
+  pbody *__pos=prodbodyfirstelem(prodbody);	\
+  int __elem=(int)(__pos->key);			\
+  int __res=(__elem==__head);			\
+  __res;})
+
+int prodfindleftrecursion(production *prod,int result[]);
+
+int prodfindleftrecursion(production *prod,int result[])
+{
+  productionbody *pbpos;
+  bzero(result,sizeof(int)*(prod->cnt));
+  int pt=0;
+  int cnt=0;
+  list_for_each_entry(pbpos,&(prod->productionbody->list),list){
+    if((result[pt++]=prodhaveleftrecursion(prod,pbpos))==1)
+      cnt++;
+  }
+  return cnt;
+}
 //====================print/test
 void printproduction(production *prod);
 

@@ -8,7 +8,8 @@
 
 #define NONTERMINAL  1
 #define TERMINALSET  2
-#define TERMINAL     3
+#define TERMINALSEQ  3
+#define TERMINAL     4
 
 struct symbolattr;
 typedef struct symbolattr symbolattr;
@@ -41,8 +42,12 @@ void symbolsetattr(symbolattr *attr);
 void symbolsetattr(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
-  int isset=prodisterminalset(prod);
-  if(isset) attr->type=TERMINALSET;
-  else attr->type=NONTERMINAL;
+  int isnt=prodhasnonterminal(prod);
+  if(isnt) 
+    attr->type=NONTERMINAL;
+  else if(prodisterminalset(prod))
+    attr->type=TERMINALSET;
+  else 
+    attr->type=TERMINALSEQ;
 }
 #endif

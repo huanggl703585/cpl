@@ -76,7 +76,7 @@ void printreexp(re_exp *exp)
       _printreoperator(pos->id);
     }
     else
-      printf(" %d ",pos->id);
+      printf("%d",pos->id);
   }
   printf("\n");
 }
