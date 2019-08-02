@@ -13,7 +13,8 @@ typedef struct re_operator re_operator;
 struct re_symbol{
   int index;//index==0 means a terminal symbol '#'
   struct list_head list;
-
+  //used for dfa's output
+  int sign;
 };
 
 #define CAT  1
@@ -78,13 +79,23 @@ re_operator* createreoperator(int operator)
   } while(0)
 
 void travelresymbol(re_symbol *sym);
+void travelreoperator(re_operator *oper);
 
 void travelresymbol(re_symbol *sym)
 {
   re_symbol *iter=sym;
   do{
-    printf("%d \n",iter->index);
+    printf("%d ",iter->index);
   }while((iter=list_next_entry(iter,list))!=sym);
+  printf("\n");
 }
 
+void travelreoperator(re_operator *oper)
+{
+  re_operator *iter=oper;
+  do{
+    printf("%d ",iter->operator);
+  }while((iter=list_next_entry(iter,list))!=oper);
+  printf("\n");
+}
 #endif

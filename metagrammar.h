@@ -3,7 +3,7 @@
 
 #include "production.h"
 #include "grammar.h"
-#include "re_exp.h"
+#include "dfa.h"
 
 //meta-grammar means that we use that grammar to read other grammar
 
@@ -85,10 +85,23 @@ int buildmetagrammar()
   symbolsettype(table);
   extractleftlcp(table);
   elimateleftrecursion(table);
+  symbolsettype(table);
   symboltoposort(table);
-  //prodsettoreexp(table);
+  prodsettoreexp(table);
+  //TODO
   //printreexpset(table);
-  printproductionwithname(table);
+  //printproductionwithname(table,2);
+  
+  int id=table->toposort[table->count-1];
+  symbolitem *tokenitem=searchsymboltablebyid(table,id);
+  re_seq *seq=reexptoreseq(tokenitem->attr->reexp);
+  re_node *tree=buildtree(seq);
+  //travelretree(tree);
+  int nodenum=reseqgetnodenum(seq);
+  //printf("nodenum %d ",nodenum);
+  //printreseq(seq);
+  dfa *dfa=createdfa(tree,nodenum);
+
   return 1;
 }
 

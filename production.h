@@ -146,21 +146,21 @@ productionbody *createprodbodywithpbody(pbody *body,int cnt)
 #define ispunctuate(x)				\
   (x=='(' || x==')' || x=='|')
 
-re_exp *productiontoreexp(production *prod);
-re_exp *_productiontoreexp(productionbody *prodbody);
+re_exp *productiontoreexp(production *prod,int head);
+re_exp *_productiontoreexp(productionbody *prodbody,int head);
 
-re_exp *productiontoreexp(production *prod)
+re_exp *productiontoreexp(production *prod,int head)
 {
   if(prod->cnt==1){  //don't need parentheses
     productionbody *pbpos=productionbodyfirst(prod->productionbody);
-    return _productiontoreexp(pbpos);
+    return _productiontoreexp(pbpos,head);
   }
   else{
     re_exp *ret=createreexp();
     int cnt=0;
     productionbody *pbpos;
     list_for_each_entry(pbpos,&(prod->productionbody->list),list){
-      re_exp *tmp=_productiontoreexp(pbpos);
+      re_exp *tmp=_productiontoreexp(pbpos,head);
       reexpaddparentheses(tmp);
       listappend(&(ret->list),&(tmp->list));
       free(tmp);
@@ -175,7 +175,7 @@ re_exp *productiontoreexp(production *prod)
   }
 }
 
-re_exp *_productiontoreexp(productionbody *prodbody)
+re_exp *_productiontoreexp(productionbody *prodbody,int head)
 {
   re_exp *ret=createreexp();
   pbody *pos;
@@ -183,11 +183,17 @@ re_exp *_productiontoreexp(productionbody *prodbody)
   list_for_each_entry(pos,&(prodbody->body->list),list){
     int key=(int)(pos->key);
     if(ispunctuate(key))
-      reexpappend(ret,OPERATOR,key);
+      reexpappendoperator(ret,key);
     else{
-      if(isfirst) isfirst=0;
-      else reexpappend(ret,OPERATOR,CAT);
-      reexpappend(ret,OPERAND,key);
+      if(key!=head){
+	if(isfirst) isfirst=0;
+	else reexpappendoperator(ret,CAT);
+	reexpappendoperand(ret,key,head);
+      }
+      else{
+	reexpaddparentheses(ret);
+	reexpappendoperator(ret,STAR);
+      }
     }
   }
   return ret;
@@ -344,20 +350,6 @@ void printpbodyunit(pbody *body,int len){
   int __res=(__elem==__head);			\
   __res;})
 
-int prodfindleftrecursion(production *prod,int result[]);
-
-int prodfindleftrecursion(production *prod,int result[])
-{
-  productionbody *pbpos;
-  bzero(result,sizeof(int)*(prod->cnt));
-  int pt=0;
-  int cnt=0;
-  list_for_each_entry(pbpos,&(prod->productionbody->list),list){
-    if((result[pt++]=prodhaveleftrecursion(prod,pbpos))==1)
-      cnt++;
-  }
-  return cnt;
-}
 //====================print/test
 void printproduction(production *prod);
 

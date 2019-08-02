@@ -12,6 +12,8 @@ struct re_exp{
   int type;
   int id;
   struct list_head list;
+  //used for dfa's output
+  int sign;
 };
 
 #define initreexp(name)				\
@@ -30,7 +32,7 @@ struct re_exp{
   }while(0)
 
 re_exp* createreexp();
-void reexpappend(re_exp *head,int type,int id);
+void reexpappend(re_exp *head,int type,int id,int mark);
 re_exp *reexpfind(re_exp *head,int type,int id);
 void reexpreplace(re_exp *pos,re_exp *new);
 
@@ -41,14 +43,22 @@ re_exp* createreexp()
   return ret;
 }
 
-void reexpappend(re_exp *head,int type,int id)
+void reexpappendoperator(re_exp *head,int id)
 {
   re_exp *new=createreexp();
-  new->type=type;
+  new->type=OPERATOR;
   new->id=id;
   listaddtail(&(new->list),&(head->list));
 }
 
+void reexpappendoperand(re_exp *head,int id,int mark)
+{
+  re_exp *new=createreexp();
+  new->type=OPERAND;
+  new->id=id;
+  new->sign=mark;
+  listaddtail(&(new->list),&(head->list));
+}
 re_exp *reexpfind(re_exp *head,int type,int id)
 {
   re_exp *pos;
@@ -59,10 +69,18 @@ re_exp *reexpfind(re_exp *head,int type,int id)
   return NULL;
 }
 
+#define reexpreplacesignunchange(pos,new)	\
+  listreplace(&(pos->list),&(new->list));
+
+
 void reexpreplace(re_exp *pos,re_exp *new)
 {
+  int newsign=pos->sign;
+  re_exp *p;
+  list_for_each_entry(p,&(new->list),list){
+    p->sign=newsign;
+  }
   listreplace(&(pos->list),&(new->list));
-  free(pos);
 }
 
 //==============================print/test
@@ -77,6 +95,10 @@ void printreexp(re_exp *exp)
     }
     else
       printf("%d",pos->id);
+  }
+  printf("\n");
+  list_for_each_entry(pos,&(exp->list),list){
+    printf("%d ",pos->sign);
   }
   printf("\n");
 }

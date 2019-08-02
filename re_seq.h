@@ -19,6 +19,8 @@ re_seq *createreseq();
 */
 void expandreseq(re_seq *seq);
 
+//used in createdfa(reseq,int), the int is symnum+opernum-parenthesenum
+int reseqcountparth(re_seq *seq);
 
 #define addoperatorhead(seq,_operator)			\
   do{							\
@@ -31,6 +33,9 @@ void insertresymbol(re_seq *seq,int index);
 void insertreoperator(re_seq *seq,int operator);
 re_operator* resymtooper(re_seq *seq,int symindex);
 
+void insertresymbolusereexp(re_seq *seq,re_exp *exp);
+void insertreoperatorusereexp(re_seq *seq,re_exp *exp);
+
 re_seq *createreseq()
 {
   re_seq *ret=(re_seq*)malloc(sizeof(re_seq));
@@ -42,12 +47,12 @@ re_seq *createreseq()
 
 void expandreseq(re_seq *seq)
 {
-  seq->symnum++;
-  seq->opernum++;
+  //seq->symnum++;
+  //seq->opernum++;
   insertresymbol(seq,RE_END_SYMBOL);
   addoperatorhead(seq,LEFTPARTH);
-  insertreoperator(seq,CAT);
   insertreoperator(seq,RIGHTPARTH);
+  insertreoperator(seq,CAT);
 }
 
 void insertresymbol(re_seq *seq,int index)
@@ -65,6 +70,36 @@ void insertreoperator(re_seq *seq,int operator)
   seq->opernum++;
 }
 
+void insertresymbolusereexp(re_seq *seq,re_exp *exp)
+{
+  int index=exp->id;
+  re_symbol* new=createresymbol(index);
+  new->sign=exp->sign;
+  listaddtail(&(new->list),&(seq->operands->list));
+  seq->symnum++;
+}
+
+void insertreoperatorusereexp(re_seq *seq,re_exp *exp)
+{
+  int operator=exp->id;
+  insertreoperator(seq,operator);
+}
+
+#define reseqgetnodenum(reseq)			\
+  (reseq->opernum+reseq->symnum-reseqcountparth(reseq))
+
+int reseqcountparth(re_seq *seq)
+{
+  re_operator *operlist=seq->operator;
+  re_operator *pos;
+  int cnt=0;
+  list_for_each_entry(pos,&(operlist->list),list){
+    if(pos->operator == LEFTPARTH)
+      cnt++;
+  }
+  cnt*=2;
+  return cnt;
+}
 
 //point to 'next', for example:
 //symbol:   a    b      c
@@ -150,10 +185,18 @@ re_seq *reexptoreseq(re_exp *exp)
   re_exp *pos;
   list_for_each_entry(pos,&(exp->list),list){
     if(pos->type==OPERATOR)
-      insertreoperator(ret,pos->id);
+      insertreoperatorusereexp(ret,pos);
     else
-      insertresymbol(ret,pos->id);
+      insertresymbolusereexp(ret,pos);
   }
   return ret;
+}
+//=================================print
+void printreseq(re_seq *seq)
+{
+  printf("operand: ");
+  travelresymbol(seq->operands);
+  printf("operator: ");
+  travelreoperator(seq->operator);
 }
 #endif

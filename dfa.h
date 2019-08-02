@@ -4,13 +4,23 @@
 #include "set.h"
 #include "re_node.h"
 #include "jumptable_link.h"
-#include "dynamicarray.h"
+#include "kvpair.h"
 #include "tree.h"
+
+typedef kvpair endstate;
+
+int findendstate(endstate* list,int state)
+{
+  void *value=kvpairfind(list,(void*)state);
+  return (int)(value);
+}
 
 typedef struct dfa dfa;
 struct dfa{
   int start;
-  darray *end;
+  //darray *end;
+  //key: end state; value: output
+  endstate *end;
   int statecnt;
   set *alphabet;
   jumptable_link *jtable;
@@ -20,14 +30,31 @@ typedef struct dfa_instance dfa_instance;
 struct dfa_instance{
   dfa *dfa;
   int state;
-  int lastendstate;
+  int lastend;
 };
 
+#define initendstate()				\
+  (endstate*)_createkvpair(NULL,NULL)		
+
+#define endstateappend(head,stateid,output)	\
+  kvpairappend(head,stateid,output)
+
+#define restartdfainstance(instance)		\
+  instance->state=instance->dfa->start;		\
+  instance->lastend=0
+/*
 #define getendstate(instance)			\
   (instance->lastendstate)
 
 #define inendstate(dfa,state)			\
   (valueindarray(dfa->end,state))
+*/
+
+//state's type is set*
+#define getstatesign(state,leavearr) ({			\
+      int key=state->key;				\
+      re_node *node=leavearr[key];			\
+      node->key.leave->sign;})
 
 dfa* createdfa(re_node *tree,int nodenum);
 
@@ -36,12 +63,11 @@ dfa_instance *createdfainstance(dfa* dfa);
 int walkdfa(dfa_instance *dfa,int inputstate);
 void printdfa(dfa* dfa);
 
-
 dfa* createdfa(re_node *tree,int nodenum)
 {
   dfa *ret=(dfa*)malloc(sizeof(dfa));
   ret->jtable=createjumptablelink();
-  ret->end=createdarray(1,2);
+  ret->end=initendstate();
 
   int endposition;
   set *alphaset=NULL; //char set
@@ -156,6 +182,8 @@ dfa* createdfa(re_node *tree,int nodenum)
   int alphacnt;
   travelavltree(alphaset,alphabet,256,alphacnt);
 
+  int signarray[256]={0};
+  
   int statecnt=0;
   int mark[256]={0};
   set *stateset[256]={NULL};
@@ -169,6 +197,7 @@ dfa* createdfa(re_node *tree,int nodenum)
   travelavltree((tree->firstpos),tmp,256,tmpcnt);
   for(int i=0;i<tmpcnt;i++)
     insertset(curstate,tmp[i]);
+  signarray[statecnt]=getstatesign(curstate,leave);
   stateset[statecnt++]=curstate;
   
   while(1){
@@ -197,6 +226,8 @@ dfa* createdfa(re_node *tree,int nodenum)
 	int hasequal=arrayfindequal(stateset,statecnt,tmpset,avltreecmp);
 	//printf("hasequal %d\n",hasequal);
 	if(hasequal==-1){ //add state
+	  if((signarray[statecnt]=getstatesign(tmpset,leave))==0)
+	    signarray[statecnt]=signarray[contine];
 	  mark[statecnt]=0;
 	  stateset[statecnt]=tmpset;
 	  hasequal=statecnt++;
@@ -221,12 +252,13 @@ dfa* createdfa(re_node *tree,int nodenum)
     for(int j=0;j<travelcnt;j++){
       //printf(" %d ",travelarr[j]);
       if(travelarr[j]==endposition){
-	insertdarray(ret->end,(void*)(i+1));
+	//insertdarray(ret->end,(void*)(i+1));
+	endstateappend((ret->end),i+1,signarray[i]);
       }
     }
-    printf("\n");
+    //printf("\n");
   }
-  
+
   ret->start=1;
   ret->alphabet=alphaset;
   ret->statecnt=statecnt;
@@ -234,11 +266,13 @@ dfa* createdfa(re_node *tree,int nodenum)
   return ret;
 }
 
+
+
 void printdfa(dfa* dfa)
 {
   printf("dfa start %d\n",dfa->start);
-  printf("dfa end ");
-  printdarray(dfa->end);
+  printf("dfa end\n");
+  printkvpair(dfa->end);
   printjumptable(dfa->jtable);
 }
 
@@ -252,9 +286,9 @@ dfa_instance * createdfainstance(dfa *dfa)
 int walkdfa(dfa_instance *instance,int input)
 {
   int ret=jumptablefind(instance->dfa->jtable,instance->state,input);
-  if(valueindarray(instance->dfa->end,instance->state,intequal)){
-    //instance->state=instance->dfa->start;
-    instance->lastendstate=ret;
+  int isend;
+  if((isend=findendstate(instance->dfa->end,instance->state))==0){
+    instance->lastend=isend;
   }
   instance->state=ret;
   return ret;

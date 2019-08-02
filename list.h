@@ -57,8 +57,8 @@ void listreplace(struct list_head *origin,struct list_head *newhead)
   origin->next->prev=newhead->prev;
   newhead->next->prev=origin->prev;
   newhead->prev->next=origin->next;
-  origin->prev=origin->next=origin;
-  newhead->prev=newhead->next=newhead;
+  //origin->prev=origin->next=origin;
+  //newhead->prev=newhead->next=newhead;
 }
 
 void listappend(struct list_head *head,struct list_head *new)

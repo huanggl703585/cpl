@@ -26,6 +26,8 @@ re_node* reseqtotree(re_seq *seq);
 re_node* buildtree(re_seq *seq);
 re_node* _buildtree(re_iterator *iter,int *index);
 
+#define ISLEAVE 1
+#define ISNODE  0
 re_node *createrenode(int isleave,void *key)
 {
   re_node *ret=(re_node*)malloc(sizeof(re_node));
@@ -36,34 +38,6 @@ re_node *createrenode(int isleave,void *key)
     ret->key.node=(re_operator*)key;
   ret->firstpos=ret->lastpos=NULL;
   return ret;
-}
-
-re_node* reseqtotree(re_seq *seq)
-{
-  re_symbol *curoperand;
-  re_node *curnode;
-
-  int indexcnt=1;
-  curoperand=list_next_entry(seq->operands,list);
-  curnode=createrenode(1,curoperand);
-  curnode->index=indexcnt++;
-
-  re_operator *oper=list_next_entry(seq->operator,list);
-  do{
-    re_node *rightnode=NULL,*parent=NULL;
-    if(oper->operator != STAR){  //operator is binary operator
-      curoperand=list_next_entry(curoperand,list);
-      rightnode=createrenode(1,curoperand);
-      rightnode->index=indexcnt++;
-    }
-    parent=createrenode(0,oper);
-    parent->left=curnode;
-    parent->right=rightnode;
-    //printf("%d %d\n",curnode->key.leave->index,parent->key.node->operator);
-    curnode=parent;
-
-  }while((oper=list_next_entry(oper,list))!=seq->operator);
-  return curnode;
 }
 
 re_node *getchild(re_iterator *iter,int *index)
@@ -83,6 +57,7 @@ re_node *getchild(re_iterator *iter,int *index)
 
 re_node* buildtree(re_seq *seq)
 {
+  expandreseq(seq);
   re_iterator iter;
   initreiterator(iter,seq);
   int index=1;
@@ -96,18 +71,15 @@ re_node* _buildtree(re_iterator *iter,int *index)
 {
   re_node *ret=NULL;
   re_operator *curoperator;
-  
-  re_node *rightnode;
-  re_node *lastnode;
+  re_node *rightnode,*lastnode;
+
+  ret=getchild(iter,index);
+  lastnode=ret;
+
   while((curoperator=getnextoperator(iter))!=NULL){
-    //printf("%d \n",curoperator->operator);
     if(curoperator->operator==RIGHTPARTH)
       return ret;
-    else if(curoperator->operator==LEFTPARTH){
-      ret=_buildtree(iter,index);
-      lastnode=ret;
-    }
-    else if(curoperator->operator==STAR){
+    if(curoperator->operator==STAR){
       re_node *new=createrenode(0,curoperator);
       new->left=lastnode;
       if(lastnode->parent==NULL){
@@ -116,14 +88,13 @@ re_node* _buildtree(re_iterator *iter,int *index)
       }
       else {
 	lastnode->parent->right=new;
+	//lastnode unchange, it should consider duplicate star?
       }
       lastnode->parent=new;
     }
     else{ // CAT AND OR
-      if(ret==NULL)
-	ret=getchild(iter,index);
       rightnode=getchild(iter,index);
-      re_node *new = createrenode(0,curoperator);
+      re_node *new = createrenode(ISLEAVE,curoperator);
       new->left=ret;
       new->right=rightnode;
       ret->parent=new;
@@ -146,7 +117,7 @@ void printrenode(re_node *node)
     printf("%d ",node->key.node->operator);
 }
 
-//post order traversal
+//prev order traversal
 void travelretree(re_node *tree)
 {
   if(isnode(tree)){

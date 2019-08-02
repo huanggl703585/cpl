@@ -284,8 +284,9 @@ void elimateleftrecursion(symboltable *table)
 //========================re_exp
 //solve left recursion before
 void symbolsettype(symboltable *table);
+//TODO : IT SHOULD MOVE TO GRAMMAR.H
 void prodsettoreexp(symboltable *table);
-void symbolreexptransit(symboltable *table,re_exp *re);
+void symbolreexptransit(symboltable *table,re_exp *re,int changesign);
 void printreexpset(symboltable *table); 
 
 void symbolsettype(symboltable *table)
@@ -297,22 +298,28 @@ void symbolsettype(symboltable *table)
   }
 }
 
+#define CHANGESIGN   1
+#define UNCHANGESIGN 0
 void prodsettoreexp(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
     symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
     symbolattr *attr=item->attr;
     if(attr->type==TERMINALSEQ || attr->type==NONTERMINAL){
-      re_exp *re=productiontoreexp(attr->attr.prod);
+      re_exp *re=productiontoreexp(attr->attr.prod,table->toposort[i]);
       printreexp(re);
-      if(attr->type==NONTERMINAL)
-	symbolreexptransit(table,re);
+      if(attr->type==NONTERMINAL){
+	if(table->toposort[i]==127)
+	  symbolreexptransit(table,re,CHANGESIGN);
+	else
+	  symbolreexptransit(table,re,UNCHANGESIGN);
+      }
       attr->reexp=re;
     }
   }
 }
 
-void symbolreexptransit(symboltable *table,re_exp *re)
+void symbolreexptransit(symboltable *table,re_exp *re,int changesign)
 {
   re_exp *pos;
   list_for_each_entry(pos,&(re->list),list){
@@ -321,26 +328,37 @@ void symbolreexptransit(symboltable *table,re_exp *re)
       symbolitem *item=searchsymboltablebyid(table,id);
       if(item->attr->type==NONTERMINAL || item->attr->type==TERMINALSEQ){
 	re_exp *replace=item->attr->reexp;
-	reexpreplace(pos,replace);
+	if(changesign==CHANGESIGN){
+	  reexpreplacesignunchange(pos,replace);
+	}
+	else
+	  reexpreplace(pos,replace);
       }
     }
   }
 }
 
+//TODO
 void printreexpset(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
     symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
-    printreexp(item->attr->reexp);
+    if(item->attr->type==NONTERMINAL || item->attr->type==TERMINALSEQ)
+      printreexp(item->attr->reexp);
   }
 }
 //========================print/test
-void printproductionwithname(symboltable *table);
+void printproductionwithname(symboltable *table,int seq);
 
-void printproductionwithname(symboltable *table)
+void printproductionwithname(symboltable *table,int seq)
 {
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    int id;
+    if(id==1)
+      id=i+table->bias;
+    else
+      id=table->toposort[i];
+    symbolitem *item=searchsymboltablebyid(table,id);
     symbolattr *attr=item->attr;
     production *prod=attr->attr.prod;
     int head=prod->head;
