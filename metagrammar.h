@@ -1,11 +1,12 @@
 #ifndef __METAGRAMMAR_H
 #define __METAGRAMMAR_H
 
+#include "tokenizer.h"
 #include "production.h"
 #include "grammar.h"
-#include "dfa.h"
 
 //meta-grammar means that we use that grammar to read other grammar
+char *path="cgrammer.txt";
 
 grammar *metagrammar;
 
@@ -86,6 +87,7 @@ int buildmetagrammar()
   extractleftlcp(table);
   elimateleftrecursion(table);
   symbolsettype(table);
+  symbolsetmapper(table);
   symboltoposort(table);
   prodsettoreexp(table);
   //TODO
@@ -102,6 +104,15 @@ int buildmetagrammar()
   //printreseq(seq);
   dfa *dfa=createdfa(tree,nodenum);
 
+  tokenizer *tokenizer=createtokenizer(path,1024,1024);
+  tokenizer->gtable=table;
+  tokenizer->dfa=createdfainstance(dfa);
+  
+  _dotokenizer(tokenizer);
+  //token *ttmp;
+  //while((ttmp=gettoken(tokenizer))!=NULL)
+  //  ;
+  printtokenlist(tokenizer->tlist);
   return 1;
 }
 

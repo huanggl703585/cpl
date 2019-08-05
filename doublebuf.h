@@ -82,6 +82,7 @@ int readword(doublebuf *dbuf,char *recvbuf,int readsize)
     memcpy(recvbuf+firstpart,dbuf->buf,secondpart);
   }
   dbuf->lexeme=dbuf->forward;
+  recvbuf[lexlen]='\0';
   return lexlen;
 }
 #endif

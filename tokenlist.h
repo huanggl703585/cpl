@@ -17,14 +17,14 @@ struct tokenlist{
   token *tlist;
 };
 
-#define appendtokenlist(tokenlist,gindex,sindex)		\
-  do{								\
+#define appendtokenlist(tokenlist,gindex,sindex) ({		\
     token *__tmp=createtoken(gindex,sindex);			\
     listaddtail(&(__tmp->list),&(tokenlist->tlist->list));	\
-  }while(0)
+    __tmp;})
 
 token *createtoken(int gindex,int sindex);
 tokenlist *createtokenlist(symboltable *gtable,symboltable *stable);
+token* appendtoken(tokenlist *tlist,char *str,int gindex);
 
 token *createtoken(int gindex,int sindex)
 {
@@ -44,6 +44,13 @@ tokenlist *createtokenlist(symboltable *gtable,symboltable *stable)
   return ret;
 }
 
+token* appendtoken(tokenlist *tlist,char *str,int gindex)
+{
+  int sid=insertsymboltable(tlist->stable,str,NULL);
+  token *ret=appendtokenlist(tlist,sid,gindex);
+  //printf("%d %s\n",sid,str);
+  return ret;
+}
 
 //=============================test
 void printtokenlist(tokenlist *tlist)
@@ -51,7 +58,7 @@ void printtokenlist(tokenlist *tlist)
   token *head=tlist->tlist;
   token *pos;
   list_for_each_entry(pos,&(head->list),list){
-    printf("%d %d ",pos->gindex,pos->sindex);
+    printf("%d %d\n",pos->gindex,pos->sindex);
   }
 }
 

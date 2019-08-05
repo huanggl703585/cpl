@@ -42,13 +42,12 @@ struct dfa_instance{
 #define restartdfainstance(instance)		\
   instance->state=instance->dfa->start;		\
   instance->lastend=0
-/*
-#define getendstate(instance)			\
-  (instance->lastendstate)
 
-#define inendstate(dfa,state)			\
-  (valueindarray(dfa->end,state))
-*/
+#define dfainstancecopy(origin,copyright)	\
+  memcpy(copyright,origin,sizeof(dfa_instance))
+
+#define dfainstanceundo(copyright,origin)	\
+  dfainstancecopy(copyright,origin)
 
 //state's type is set*
 #define getstatesign(state,leavearr) ({			\
@@ -262,7 +261,7 @@ dfa* createdfa(re_node *tree,int nodenum)
   ret->start=1;
   ret->alphabet=alphaset;
   ret->statecnt=statecnt;
-  printdfa(ret);
+  // printdfa(ret);
   return ret;
 }
 
@@ -287,10 +286,10 @@ int walkdfa(dfa_instance *instance,int input)
 {
   int ret=jumptablefind(instance->dfa->jtable,instance->state,input);
   int isend;
-  if((isend=findendstate(instance->dfa->end,instance->state))==0){
+  instance->state=ret;
+  if((isend=findendstate(instance->dfa->end,instance->state))!=0){
     instance->lastend=isend;
   }
-  instance->state=ret;
   return ret;
 }
 

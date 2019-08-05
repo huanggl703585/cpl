@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "symbolattr.h"
 #include "hash.h"
+#include "symboltableoption.h"
 
 #define ASCII_BIAS 127
 
@@ -24,7 +25,9 @@ struct symboltable{
   int *idarray;
   int *toposort;
   int topofirst;
-  symbolitem **table;
+  symbolitem **table;   //it stores non-terminal
+  charmapper **terminal;//it stores terminal
+  symboltableoption option;
 };
 
 #define symbol_table_basic_size 1024
@@ -36,6 +39,9 @@ symbolitem* searchsymboltablebyid(symboltable *st,int id);
 int changesymboltablebyname(symboltable *st,char *str,symbolattr *attr);
 int changesymboltablebyid(symboltable *st,int id,symbolattr *attr);
 
+symboltableoption *symboltablegetoption(symboltable *table);
+void symboltablesetoption(symboltable *table,symboltableoption *option);
+
 symboltable *createsymboltable(size_t size,int bias)
 {
   symboltable* ret=(symboltable*)malloc(sizeof(symboltable));
@@ -46,9 +52,12 @@ symboltable *createsymboltable(size_t size,int bias)
   ret->toposort=(int*)malloc(sizeof(int)*(ret->size));
   ret->topofirst=0;
   ret->table=(symbolitem**)malloc(sizeof(symbolitem*)*(ret->size));
+  ret->terminal=(charmapper**)malloc(sizeof(charmapper*)*(ret->bias));
   bzero(ret->idarray,sizeof(int)*(ret->size));
   bzero(ret->table,sizeof(symbolitem*)*(ret->size));
+  bzero(ret->terminal,sizeof(charmapper*)*(ret->bias));
   bzero(ret->toposort,sizeof(int)*(ret->size));
+  init_symboltable_option(ret->option);
   return ret;
 }
 
@@ -59,8 +68,13 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   symbolitem *item=(st->table)[hashvalue];
 
   while(item!=NULL){
-    if(strcmp(item->name,str)==0)
-      return -1; //we consider dupcate name is an error
+    if(strcmp(item->name,str)==0){
+      //whether dupcate name is an error depends on table->option
+      if(st->option.duplicate==1)
+	return item->id;
+      else
+	return -1;
+    }
     hashvalue=(hashvalue+1)%(st->size);
     item=(st->table)[hashvalue];
     if(hashvalue==head) // the table is full
@@ -130,6 +144,18 @@ int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
   item->attr=attr;
 }
 
+symboltableoption *symboltablegetoption(symboltable *table)
+{
+  symboltableoption *ret=(symboltableoption*)malloc(sizeof(symboltableoption));
+  memcpy(ret,&(table->option),sizeof(symboltableoption));
+  return ret;
+}
+
+void symboltablesetoption(symboltable *table,symboltableoption *option)
+{
+  memcpy(&(table->option),option,sizeof(symboltableoption));
+}
+
 //============================================
 #define symbolderivename(newname,oriname,ulen)			\
   char *newname=(char*)malloc(strlen(oriname)+1+ulen);		\
@@ -154,7 +180,7 @@ void extractleftlcpone(symboltable *table,int id)
 {
   symbolitem *item=searchsymboltablebyid(table,id);
   if(item->attr->type==TERMINALSET)
-    return ;
+   return ;
   production *prod=item->attr->attr.prod;
   int pcnt=prod->cnt;
   while(1){
@@ -281,13 +307,14 @@ void elimateleftrecursion(symboltable *table)
   }
 }
 
-//========================re_exp
+//============================type,mapper
 //solve left recursion before
 void symbolsettype(symboltable *table);
-//TODO : IT SHOULD MOVE TO GRAMMAR.H
-void prodsettoreexp(symboltable *table);
-void symbolreexptransit(symboltable *table,re_exp *re,int changesign);
-void printreexpset(symboltable *table); 
+void symbolsetmapper(symboltable *table);
+void _symbolsetmapper(symboltable *table,production *prod,int mapto);
+
+#define havemapper(table,id)			\
+  (table->terminal[id]!=NULL)
 
 void symbolsettype(symboltable *table)
 {
@@ -298,6 +325,37 @@ void symbolsettype(symboltable *table)
   }
 }
 
+void symbolsetmapper(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    if(item->attr->type==TERMINALSET){
+      production *prod=item->attr->attr.prod;
+      _symbolsetmapper(table,prod,i+table->bias);
+    }
+  }
+}
+
+void _symbolsetmapper(symboltable *table,production *prod,int mapto)
+{
+  productionbody *pbpos;
+  symbolitem *item;
+  charmapper *mapper=NULL;
+  list_for_each_entry(pbpos,&(prod->productionbody->list),list){
+    pbody *body=getpbodynext((pbpos->body));
+    int id=getpbodykey(body);
+    if((table->terminal[id])==NULL){
+      table->terminal[id]=createcharmapper(id);
+    }
+    charmapperappend(table->terminal[id],mapto);
+  }
+}
+//========================re_exp
+//TODO : IT SHOULD MOVE TO GRAMMAR.H
+void prodsettoreexp(symboltable *table);
+void symbolreexptransit(symboltable *table,re_exp *re,int changesign);
+void printreexpset(symboltable *table); 
+
 #define CHANGESIGN   1
 #define UNCHANGESIGN 0
 void prodsettoreexp(symboltable *table)
@@ -307,7 +365,7 @@ void prodsettoreexp(symboltable *table)
     symbolattr *attr=item->attr;
     if(attr->type==TERMINALSEQ || attr->type==NONTERMINAL){
       re_exp *re=productiontoreexp(attr->attr.prod,table->toposort[i]);
-      printreexp(re);
+      //printreexp(re);
       if(attr->type==NONTERMINAL){
 	if(table->toposort[i]==127)
 	  symbolreexptransit(table,re,CHANGESIGN);

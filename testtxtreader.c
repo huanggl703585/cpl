@@ -11,14 +11,6 @@ int main()
   char c;
   char readbuf[11];
   int cnt=0;
- 
-  charmapper head;
-  charmapper m1,m2;
-  initcharmapper(head,0,NULL,0);
-  initcharmapper(m1,2,isalpha,1);
-  initcharmapper(m2,1,isascii,2);
-  addcharmapper(&m1,&head);
-  addcharmapper(&m2,&head);
 
   do{
     c=readone(r);
@@ -30,7 +22,7 @@ int main()
       printf("%s\n",readbuf);
       cnt=0;
       }*/
-    printf("%d",mapinput(&head,c));
+    printf("%c",c);
     //mapinput(&head,c);
   }while(c!='\0');
 }

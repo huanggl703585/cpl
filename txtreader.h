@@ -7,10 +7,8 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include "doublebuf.h"
-//TODO 
-//IF BLOCKSIZE SETS TO 24, IT WILL CAUSE ERROR
-//IT SEEMS THAT SWITCH BUF MULTIPLE TIME WILL CAUSE ERROR
-#define BLOCKSIZE 24
+
+#define BLOCKSIZE 1024
 
 typedef struct reader reader;
 typedef struct txtsrc txtsrc;
@@ -42,6 +40,12 @@ reader *createreader(char *path,int blocksize);
 
 #define readone(reader) (readchar(reader->dbuf,reader->src))
 #define acceptword(reader,recv,rsize) (readword(reader->dbuf,recv,rsize)) 
+
+#define skipspace(reader,c)			\
+  while(isspace(c)){				\
+    acceptword(reader,&c,1);			\
+    c=readone(reader);				\
+  }
 
 txtsrc *createtxtsrc(char *path,int blocksize)
 {
