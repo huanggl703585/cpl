@@ -11,21 +11,14 @@
 //we assume the the head of pbody is 0(NULL)  
 typedef slist pbody;
 
+#define pbody_for_each(pos,listhead)		\
+  slist_for_each(pos,listhead)
 
 #define createpbody(pos) 					\
   do{									\
     initslist(__newpbody,NULL);						\
     pos=__newpbody;							\
   }while(0)
-
-/*
-pbody *createpbody()
-{
-  pbody *ret=(pbody*)malloc(sizeof(pbody));
-  ret->key=NULL;
-  list_init(ret->list);
-  return ret;
-  }*/
 
 void appendpbody(pbody *listhead,int elem)
 {
@@ -62,6 +55,9 @@ struct productionbody{
   int cnt;
   struct list_head list;
 };
+
+#define prodbody_for_each(pbpos,prod)		\
+  list_for_each_entry(pbpos,&(prod->productionbody->list),list)
 
 #define productionbodyfirst(prodbody)		\
   list_first_entry(&(prodbody->list),productionbody,list)

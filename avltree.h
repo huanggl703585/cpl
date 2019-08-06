@@ -63,8 +63,8 @@ struct avltree{
     cnt=__cnt;								\
   }while(0)							
 
-void avltreeinsert(struct avltree** root,int key);
-void _avltreeinsert(struct avltree** root,struct avltree* new);
+int avltreeinsert(struct avltree** root,int key);
+int _avltreeinsert(struct avltree** root,struct avltree* new);
 void avltreedelete(struct avltree* root,int key);
 int avltreefind(struct avltree* root,int key);
 struct avltree* _avltreefind(struct avltree* root,int key);
@@ -76,25 +76,25 @@ void avlleftrotate(struct avltree **root,struct avltree* point,int height);
 
 void rebalanceavltree(struct avltree** root,struct avltree* parent,int isleft);
 
-void avltreeinsert(struct avltree** root,int key)
+int avltreeinsert(struct avltree** root,int key)
 {
   struct avltree *new=(struct avltree*)malloc(sizeof(struct avltree));
   avltreeinit((*new),key);
-  _avltreeinsert(root,new);
+  return _avltreeinsert(root,new);
 }
 
-void _avltreeinsert(struct avltree **root,struct avltree *new)
+int _avltreeinsert(struct avltree **root,struct avltree *new)
 {
   if(*root==NULL){
     *root=new;
-    return ;
+    return 1;
   }
   struct avltree *pt=*root;
   int isleft=0;
   while(1){
     struct avltree *next;
     if(pt->key==new->key)
-      return ;
+      return 0;
     else if(pt->key<new->key){
       pt->factor++;
       if(pt->right!=NULL)
@@ -117,7 +117,9 @@ void _avltreeinsert(struct avltree **root,struct avltree *new)
       }
     }
   }
+  //TODO
   //rebalanceavltree(root,pt,isleft);
+  return 1;
 }
 
 void rebalanceavltree(struct avltree** root,struct avltree* parent,int isleft)
@@ -218,6 +220,7 @@ void avlleftrotate(struct avltree** root,struct avltree* point,int height)
   right->left=point;
 }
 
+//mid-travel
 void avltreeprint(struct avltree* root)
 {
   if(root==NULL){

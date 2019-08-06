@@ -1,0 +1,9 @@
+#ifndef __BUILDFIRST_H
+#define __BUILDFIRST_H
+
+void buildfirst()
+{
+
+}
+
+#endif

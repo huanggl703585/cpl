@@ -1,6 +1,7 @@
 #ifndef __SYMBOLATTR_H
 #define __SYMBOLATTR_H
 
+#include "set.h"
 #include "graph.h"
 #include "production.h"
 #include "mapinput.h"
@@ -22,6 +23,8 @@ struct symbolattr{
   }attr;
   node *node;
   re_exp *reexp;
+  set *first;
+  set *follow;
 };
 
 symbolattr *createsymbolattr();

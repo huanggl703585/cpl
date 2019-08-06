@@ -26,4 +26,6 @@ struct slist{
     printf("\n");							\
   }while(0)								\
     
+#define slist_for_each(pos,listhead)		\
+  list_for_each_entry(pos,&(listhead->list),list)
 #endif

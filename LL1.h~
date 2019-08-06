@@ -1,0 +1,71 @@
+#ifndef __BUILDFIRST_H
+#define __BUILDFIRST_H
+
+#include "symboltable.h"
+
+void buildfirst(symboltable *table);
+//return 1 if the firstset has added new
+int buildfirstone(symboltable *table,int id);
+//0 stands for empty
+int firstsethaveempty(symboltable *table,int id);
+int sethaveaddnew(set *origin,set *new);
+
+void buildfirst(symboltable *table)
+{
+  int mark[table->count];
+  bzero(mark,sizeof(int)*table->count);
+  int contine=1;
+  while(contine){
+    contine=0;
+    for(int i=0;i<table->count;i++){
+      int tmp=buildfirstone(table,i+table->bias);
+      mark[i]=tmp;
+      if(tmp!=0) contine=1;
+    }
+    for(int i=0;i<table->count;i++)
+      printf("%d ",mark[i]);
+    printf("\n");
+    bzero(mark,sizeof(int)*table->count);
+  }
+}
+
+int buildfirstone(symboltable *table,int id)
+{
+  int ret=0;
+  symbolitem *item=searchsymboltablebyid(table,id);
+  set *target=item->attr->first;
+  production *prod=item->attr->attr.prod;
+  productionbody *pbpos;
+  prodbody_for_each(pbpos,prod){
+    pbody *pos;
+    pbody_for_each(pos,(pbpos->body)){
+      int key=getpbodykey(pos);
+      if(key<table->bias){
+	int tmp=insertset(target,key);
+	item->attr->first=target;
+	//printset(target);
+	//printf("tmp %d\n",tmp);
+	if(ret==0 && tmp!=0) ret=1;
+	break;
+      }
+      else{
+	symbolitem *srcitem=searchsymboltablebyid(table,key);
+	set *src=srcitem->attr->first;
+	int tmp=intersectset(&target,src);
+	item->attr->first=target;
+	if(ret==0 && tmp!=0) ret=1;
+	if(firstsethaveempty(table,key)!=0)
+	  break;
+      }
+    }
+  }
+  return ret;
+}
+
+int firstsethaveempty(symboltable *table,int id)
+{
+  symbolitem *item=searchsymboltablebyid(table,id);
+  set *firstset=item->attr->first;
+  return findset(firstset,0);
+}
+#endif

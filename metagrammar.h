@@ -5,6 +5,8 @@
 #include "production.h"
 #include "grammar.h"
 
+#include "LL1.h"
+
 //meta-grammar means that we use that grammar to read other grammar
 char *path="cgrammer.txt";
 
@@ -112,7 +114,11 @@ int buildmetagrammar()
   //token *ttmp;
   //while((ttmp=gettoken(tokenizer))!=NULL)
   //  ;
-  printtokenlist(tokenizer->tlist);
+  //printtokenlist(tokenizer->tlist);
+
+  buildfirst(table);
+  buildfollow(table,table->bias);
+  printfirstandfollow(table);
   return 1;
 }
 
