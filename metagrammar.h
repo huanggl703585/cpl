@@ -119,6 +119,9 @@ int buildmetagrammar()
   buildfirst(table);
   buildfollow(table,table->bias);
   printfirstandfollow(table);
+
+  buildforecasttable(table);
+  printforecasttable(table);
   return 1;
 }
 

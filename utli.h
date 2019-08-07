@@ -8,7 +8,7 @@
 #define max(x,y) ((x)<(y)?(y):(x))
 
 #define intequal(x,y) ((int)x==(int)y)
-#define intcmp(x,y) (((x)>(y))?1:(((x)==(y))?0:-1))
+#define intcmp(x,y) ((((int)x)>((int)y))?1:((((int)x)==((int)y))?0:-1))
 #define intcmp_reverse(x,y) (((x)<(y))?1:(((x)==(y))?0:-1))
 
 #define upperdiv(x,y) (((x)+(y)-1)/(y))
@@ -65,6 +65,14 @@
 #define container_of(ptr,type,member) ({		\
   const typeof(((type *)0)->member) *__mptr=(ptr);	\
   (type*)((char*)__mptr-offsetof(type,member));})
+
+int funcintcmp(void *a,void *b)
+{
+  int _a=(int)a;
+  int _b=(int)b;
+  return intcmp(_a,_b);
+}
+
 
 int min3(int a,int b,int c);
 int _getstr(char *pt); //get the offset of string start from pt

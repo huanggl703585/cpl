@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "kvpair.h"
+
 typedef struct darray darray;
 struct darray{
   void** array;
@@ -19,8 +21,17 @@ struct darray{
     printf("\n");				\
   }while(0)
 
+#define insertdarray(darr,value)		\
+  _insertdarray(darr,(void*)value)
+
 darray* createdarray(int initsize,int factor);
-int insertdarray(darray* arr,void* value);
+void _insertdarray(darray* arr,void* value);
+
+void sortinsertdarray(darray *arr,void *value,int (*cmp)(void*,void*));
+//we assume that, the value of the darray is a kvpair, 
+//argument key is the key of the kvpair, cmp function is used to compare key
+void *sortfinddarray(darray *arr,void *key,int (*cmp)(void *,void *));
+
 #define finddarray(arr,index)			\
   (arr->array[index])
 #define getdarraycnt(arr)			\
@@ -34,6 +45,13 @@ int insertdarray(darray* arr,void* value);
 	}}					\
       __res;})					\
   
+#define testexpanddarray(darr)			\
+  do{						\
+    if(darr->pt==darr->size){						\
+      darr->size *= darr->factor;					\
+      darr->array=(void**)realloc(darr->array,sizeof(void*)*(darr->size)); \
+    }									\
+  }while(0)
 
 darray* createdarray(int initsize,int factor)
 {
@@ -44,13 +62,43 @@ darray* createdarray(int initsize,int factor)
   ret->array=(void**)malloc(sizeof(void*)*initsize);
 }
 
-int insertdarray(darray* arr,void *value)
+void _insertdarray(darray* arr,void *value)
 {
-  if(arr->pt==arr->size){
-    arr->size *= arr->factor;
-    arr->array=(void**)realloc(arr->array,sizeof(void*)*(arr->size));
-  }
+  testexpanddarray(arr);
   arr->array[arr->pt++]=value;
 }
 
+void sortinsertdarray(darray *arr,void *value,int (*cmp)(void *,void*))
+{
+  int i=0;
+  for(i=0;i<arr->pt;i++){
+    void *tmp=finddarray(arr,i);
+    if(cmp(value,tmp)<0)
+      break;
+  }
+  void *padding;
+  insertdarray(arr,padding);
+  int movenum=arr->pt-i-1;
+  memmove(&(arr->array[i+1]),&(arr->array[i]),sizeof(void*)*movenum);
+  arr->array[i]=value;
+}
+
+void *sortfinddarray(darray *arr,void *key,int (*cmp)(void *,void *))
+{
+  int low=0,high=arr->pt;
+  int mid;
+  while(high>low){
+    mid=(high+low)/2;
+    //printf("%d %d %d\n",high,mid,low);
+    void* object=finddarray(arr,mid);
+    int cmpres=cmp(object,key);
+    if(cmpres==0)
+      return object;
+    else if(cmpres<0)
+      low=mid+1;
+    else
+      high=mid-1;
+  }
+  return NULL;
+}
 #endif

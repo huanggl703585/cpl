@@ -25,6 +25,7 @@ struct symbolattr{
   re_exp *reexp;
   set *first;
   set *follow;
+  darray *forecastlist;
 };
 
 symbolattr *createsymbolattr();
@@ -53,4 +54,5 @@ void symbolsetattr(symbolattr *attr)
   else 
     attr->type=TERMINALSEQ;
 }
+
 #endif

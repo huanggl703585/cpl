@@ -50,12 +50,20 @@ int buildfirstone(symboltable *table,int id)
       }
       else{
 	symbolitem *srcitem=searchsymboltablebyid(table,key);
-	set *src=srcitem->attr->first;
-	int tmp=intersectset(&target,src);
-	item->attr->first=target;
-	if(ret==0 && tmp!=0) ret=1;
-	if(firstsethaveempty(table,key)!=0)
+	if(srcitem->attr->type==TERMINALSET){
+	  int tmp=insertset(target,key);
+	  item->attr->first=target;
+	  if(ret==0 && tmp!=0) ret=1;
 	  break;
+	}
+	else{
+	  set *src=srcitem->attr->first;
+	  int tmp=intersectset(&target,src);
+	  item->attr->first=target;
+	  if(ret==0 && tmp!=0) ret=1;
+	  if(firstsethaveempty(table,key)!=0)
+	    break;
+	}
       }
     }
   }
@@ -123,14 +131,17 @@ int _buildfollow(symboltable *table,int id)
 	}
 	else{
 	  symbolitem *item2=searchsymboltablebyid(table,key2);
-	  set *src=item2->attr->follow;
-	  tmp=intersectset(&target,src);
-	  if(ret==0 && tmp!=0) ret=1;
-	  //book 4.4.2 case 3
-	  if(findset(src,0)){
-	    tmp=intersectset(&target,headfollow);
+	  if(item2->attr->type==TERMINALSET)
+	    tmp=insertset(target,key2);
+	  else{
+	    set *src=item2->attr->follow;
+	    tmp=intersectset(&target,src);	  
 	    if(ret==0 && tmp!=0) ret=1;
+	    //book 4.4.2 case 3
+	    if(findset(src,0))
+	      tmp=intersectset(&target,headfollow);
 	  }
+	  if(ret==0 && tmp!=0) ret=1;
 	}
 	item1->attr->follow=target;
       }
@@ -166,12 +177,87 @@ void printfirstandfollow(symboltable *table)
 
 //===========================forecast table
 
+typedef kvpair forecastitem;
 
-forecasttable* buildforecasttable(symboltable *table);
+#define createforecastitem(key,value)			\
+  (forecastitem*)_createkvpair((void*)key,(void*)value)
 
-forecasttable* buildforecasttable(symboltable *table)
-{
-  forecasttable *ret;
+#define initforecastlist(sitem)				\
+  do{							\
+    if(sitem->attr->type==TERMINALSET)			\
+      sitem->attr->forecastlist=createdarray(10,2);	\
+    else						\
+      sitem->attr->forecastlist=createdarray(2,2);	\
+  }while(0)
   
+void buildforecasttable(symboltable *table);
+void _buildforecasttable(symboltable *table,int head,pbody *body);
+
+void _printforecastlist(darray *darr);
+void printforecasttable(symboltable *table);
+
+void buildforecasttable(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    int head=i+table->bias;
+    symbolitem *item=searchsymboltablebyid(table,head);
+    initforecastlist(item);
+    production *prod=item->attr->attr.prod;
+    productionbody *pbpos;
+    prodbody_for_each(pbpos,prod){
+      pbody *body=pbpos->body;
+      _buildforecasttable(table,head,body);
+    }
+  }
 }
+
+void _buildforecasttable(symboltable *table,int head,pbody *body)
+{
+  symbolitem *item=searchsymboltablebyid(table,head);
+  darray *darr=item->attr->forecastlist;
+  pbody *pos;
+  pbody *firstpos=getpbodynext(body);
+  int firstsymbol=getpbodykey(firstpos);
+  if(firstsymbol<table->bias){
+    forecastitem *fitem=createforecastitem(firstsymbol,body);
+    sortinsertdarray(darr,fitem,intkvpaircmp);
+  }
+  else{
+    symbolitem *sitem=searchsymboltablebyid(table,firstsymbol);
+    set *firstset=sitem->attr->first;
+    //TODO:SEE BOOK p143 CASE 2
+    if(findset(firstset,0)){
+
+    }
+    int recver[256];
+    int recvercnt;
+    travelavltree(firstset,recver,256,recvercnt);
+    for(int i=0;i<recvercnt;i++){
+      int key=(int)(recver[i]);
+      if(key<table->bias){
+	forecastitem *fitem=createforecastitem(key,body);
+	sortinsertdarray(darr,fitem,intkvpaircmp);
+      }
+    }
+  }
+}
+
+void printforecasttable(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    darray *darr=item->attr->forecastlist;
+    _printforecastlist(darr);
+  }
+}
+
+void _printforecastlist(darray *darr)
+{
+  for(int i=0;i<darr->pt;i++){
+    forecastitem *fitem=finddarray(darr,i);
+    printf("%d ",(int)(fitem->key));
+    printslist((fitem->value));
+  }
+  printf("\n");
+} 
 #endif

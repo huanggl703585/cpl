@@ -47,4 +47,24 @@ void *kvpairfind(kvpair *head,void *key)
   return NULL;
 }
 
+//==============compare function
+int intkvpaircmp(void *a,void *b);
+int intkvpairkeycmp(void *a,void *b);
+
+int intkvpaircmp(void *a,void *b)
+{
+  kvpair *_a=(kvpair*)a;
+  kvpair *_b=(kvpair*)b;
+  return intcmp((_a->key),(_b->key));
+}
+
+int intkvpairkeycmp(void *a,void *b)
+{
+  kvpair *_a=(kvpair*)a;
+  int _b=(int)(b);
+  int _keya=(int)(_a->key);
+  //printf("%d %d\n",_keya,_b);
+  return intcmp((_keya),(_b));
+}
+
 #endif
