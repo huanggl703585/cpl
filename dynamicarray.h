@@ -28,9 +28,12 @@ darray* createdarray(int initsize,int factor);
 void _insertdarray(darray* arr,void* value);
 
 void sortinsertdarray(darray *arr,void *value,int (*cmp)(void*,void*));
+
+#define sortfinddarray(darr,key,cmp)			\
+  _sortfinddarray(darr,(void*)key,cmp)
 //we assume that, the value of the darray is a kvpair, 
 //argument key is the key of the kvpair, cmp function is used to compare key
-void *sortfinddarray(darray *arr,void *key,int (*cmp)(void *,void *));
+void *_sortfinddarray(darray *arr,void *key,int (*cmp)(void *,void *));
 
 #define finddarray(arr,index)			\
   (arr->array[index])
@@ -83,7 +86,7 @@ void sortinsertdarray(darray *arr,void *value,int (*cmp)(void *,void*))
   arr->array[i]=value;
 }
 
-void *sortfinddarray(darray *arr,void *key,int (*cmp)(void *,void *))
+void *_sortfinddarray(darray *arr,void *key,int (*cmp)(void *,void *))
 {
   int low=0,high=arr->pt;
   int mid;

@@ -7,6 +7,8 @@
 #include "mapinput.h"
 #include "re_exp.h"
 
+#include <assert.h>
+
 #define NONTERMINAL  1
 #define TERMINALSET  2
 #define TERMINALSEQ  3
@@ -42,6 +44,7 @@ symbolattr *createsymbolattr()
   terminal set mapper
 */
 void symbolsetattr(symbolattr *attr);
+void _printsymbolattr(symbolattr *attr);
 
 void symbolsetattr(symbolattr *attr)
 {
@@ -53,6 +56,23 @@ void symbolsetattr(symbolattr *attr)
     attr->type=TERMINALSET;
   else 
     attr->type=TERMINALSEQ;
+}
+
+void _printsymbolattr(symbolattr *attr)
+{
+  int type=attr->type;
+  switch(type){
+  case TERMINAL: {printf("TERMINAL\n");break;}
+  case TERMINALSET: {printf("TERMINALSET\n");break;}
+  case TERMINALSEQ: {printf("TERMINALSEQ\n");break;}
+  case NONTERMINAL: {printf("NONTERMINAL\n");break;}
+  default:assert(0);
+  } 
+}
+
+void _disassembleor(symbolattr *attr)
+{
+  dodisassembleor(attr->attr.prod);
 }
 
 #endif

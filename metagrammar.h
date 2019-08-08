@@ -25,26 +25,29 @@ int buildmetagrammar()
   
   array[pt++]=insertsymboltable(table,"token",NULL);
   array[pt++]=insertsymboltable(table,"identifier",NULL);
+  array[pt++]=insertsymboltable(table,"equivalence",NULL);
   array[pt++]=insertsymboltable(table,"identifier-nondigit",NULL);
   array[pt++]=insertsymboltable(table,"digit",NULL);
-  array[pt++]=insertsymboltable(table,"equivalence",NULL);
+  array[pt++]=insertsymboltable(table,"alpha",NULL);
   metagrammar->start=array[0];
 
   symbolitem* spos;
   production* ppos;
   productionbody *pbpos;
-  //token ::= identifier | equivalence | or
+  //token ::= identifier | equivalence | singlechar | '|' | '(' | ')'
   spos=searchsymboltablebyid(table,array[0]);
   spos->attr->attr.prod=createproduction(array[0]);
   ppos=spos->attr->attr.prod;
   pbpos=createproductionbody(ppos);
   appendprodbody(pbpos,array[1]);
-  pbpos=createproductionbody(ppos);
-  appendprodbody(pbpos,array[4]);
-
-  //re_exp *tmp=productiontoreexp(ppos);
-  //printreexp(tmp);
-
+  appendprodbody(pbpos,'|');
+  appendprodbody(pbpos,array[2]);
+  appendprodbody(pbpos,'|');
+  appendprodbodyterminal(pbpos,'|');
+  appendprodbody(pbpos,'|');
+  appendprodbodyterminal(pbpos,'(');
+  appendprodbody(pbpos,'|');
+  appendprodbodyterminal(pbpos,')');
 
   //identifier ::= identifier-nondigit
   //           ::= identifier identifier-nondigit
@@ -52,76 +55,81 @@ int buildmetagrammar()
   spos=searchsymboltablebyid(table,array[1]);
   ppos=spos->attr->attr.prod=createproduction(array[1]);
   pbpos=createproductionbody(ppos);
-  appendprodbody(pbpos,array[2]);
+  appendprodbody(pbpos,array[3]);
   pbpos=createproductionbody(ppos);
   appendprodbody(pbpos,array[1]);
   appendprodbody(pbpos,array[3]);
   pbpos=createproductionbody(ppos);
   appendprodbody(pbpos,array[1]);
-  appendprodbody(pbpos,array[2]);
+  appendprodbody(pbpos,array[4]);
 
   //equivalence ::= ':' ':' '='
-  spos=searchsymboltablebyid(table,array[4]);
-  ppos=spos->attr->attr.prod=createproduction(array[4]);
-  pbpos=createproductionbody(ppos);
-  appendprodbody(pbpos,':');
-  appendprodbody(pbpos,':');
-  appendprodbody(pbpos,'=');
-
-  //identifier-nondigit 
   spos=searchsymboltablebyid(table,array[2]);
   ppos=spos->attr->attr.prod=createproduction(array[2]);
   pbpos=createproductionbody(ppos);
+  appendprodbodyterminal(pbpos,':');
+  appendprodbodyterminal(pbpos,':');
+  appendprodbodyterminal(pbpos,'=');
+
+  //identifier-nondigit ::= '_' | alpha
+  spos=searchsymboltablebyid(table,array[3]);
+  ppos=spos->attr->attr.prod=createproduction(array[3]);
+  pbpos=createproductionbody(ppos);
   appendprodbody(pbpos,'_');
+  appendprodbody(pbpos,'|');
+  appendprodbody(pbpos,array[5]);
+
+  //digit
+  spos=searchsymboltablebyid(table,array[4]);
+  ppos=spos->attr->attr.prod=createproduction(array[4]);
   appendprodrange(ppos,'0','9');
+  
+  //alpha
+  spos=searchsymboltablebyid(table,array[5]);
+  ppos=spos->attr->attr.prod=createproduction(array[5]);
   appendprodrange(ppos,'a','z');
   appendprodrange(ppos,'A','Z');
 
-  //digit
-  spos=searchsymboltablebyid(table,array[3]);
-  ppos=spos->attr->attr.prod=createproduction(array[3]);
-  appendprodrange(ppos,'0','9');
-
-  
-  
-  //printproductionwithname(table);
-  symbolsettype(table);
-  extractleftlcp(table);
-  elimateleftrecursion(table);
-  symbolsettype(table);
-  symbolsetmapper(table);
-  symboltoposort(table);
-  prodsettoreexp(table);
+  //disassembleor(table);
+  //symbolsettype(table);
+  //printsymbolattr(table);
+  //extractleftlcp(table);
+  //elimateleftrecursion(table);
+  //symbolsettype(table);
+  printproductionwithname(table,0);
+  //symbolsetmapper(table);
+  //symboltoposort(table);
+  //prodsettoreexp(table);
   //TODO
   //printreexpset(table);
   //printproductionwithname(table,2);
   
-  int id=table->toposort[table->count-1];
-  symbolitem *tokenitem=searchsymboltablebyid(table,id);
-  re_seq *seq=reexptoreseq(tokenitem->attr->reexp);
-  re_node *tree=buildtree(seq);
+  //int id=table->toposort[table->count-1];
+  //symbolitem *tokenitem=searchsymboltablebyid(table,id);
+  //re_seq *seq=reexptoreseq(tokenitem->attr->reexp);
+  //re_node *tree=buildtree(seq);
   //travelretree(tree);
-  int nodenum=reseqgetnodenum(seq);
+  //int nodenum=reseqgetnodenum(seq);
   //printf("nodenum %d ",nodenum);
   //printreseq(seq);
-  dfa *dfa=createdfa(tree,nodenum);
+  //dfa *dfa=createdfa(tree,nodenum);
 
-  tokenizer *tokenizer=createtokenizer(path,1024,1024);
-  tokenizer->gtable=table;
-  tokenizer->dfa=createdfainstance(dfa);
+  //tokenizer *tokenizer=createtokenizer(path,1024,1024);
+  //tokenizer->gtable=table;
+  //tokenizer->dfa=createdfainstance(dfa);
   
-  _dotokenizer(tokenizer);
+  //_dotokenizer(tokenizer);
   //token *ttmp;
   //while((ttmp=gettoken(tokenizer))!=NULL)
   //  ;
   //printtokenlist(tokenizer->tlist);
 
-  buildfirst(table);
-  buildfollow(table,table->bias);
-  printfirstandfollow(table);
+  //buildfirst(table);
+  //buildfollow(table,table->bias);
+  //printfirstandfollow(table);
 
-  buildforecasttable(table);
-  printforecasttable(table);
+  //buildforecasttable(table);
+  //printforecasttable(table);
   return 1;
 }
 

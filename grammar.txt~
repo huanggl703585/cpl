@@ -1,0 +1,27 @@
+
+token ::= identifier | equivalence | singlechar | '|' | '(' | ')'
+
+identifier ::= identifier-nondigit
+	   ::= identifier identifier-nondigit
+	   ::= identifier digit
+
+singlechar ::= ''' (punct|alpha) '''
+
+equivalence ::= ':' ':' '='
+
+identifier-nondigit ::= _ | alpha
+
+digit ::= 0-9
+
+alpha ::= a-z | A-Z
+
+punct ::= ispunct
+
+0 token
+1 identifier
+2 equivalence
+3 singlechar
+4 identifier-nondigit
+5 digit
+6 punct
+7 alpha

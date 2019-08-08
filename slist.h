@@ -3,11 +3,20 @@
 
 #include "list.h"
 
+#include <stdlib.h>
+
 typedef struct slist slist;
 struct slist{
   void *key;
   struct list_head list;
 };
+
+#define slist_last(listhead)			\
+  list_last_entry(&(listhead->list),slist,list)
+
+#define slist_del(listentry)			\
+  listdel(&(listentry->list));			\
+  free(listentry)
 
 #define appendslist(new,chain)			\
   listaddtail(&(((slist*)new)->list),&(((slist*)chain)->list))
@@ -28,4 +37,8 @@ struct slist{
     
 #define slist_for_each(pos,listhead)		\
   list_for_each_entry(pos,&(listhead->list),list)
+
+//slist1 is origin to be replaced, slist2 is new list
+#define slistreplace(slist1,slist2)		\
+  listreplace(&(slist1->list),&(slist2->list))
 #endif

@@ -32,6 +32,14 @@ struct symboltable{
 
 #define symbol_table_basic_size 1024
 
+#define iterate_symbol_attr(table,func)					\
+  do{									\
+    for(int __i=0;__i<table->count;__i++){				\
+      symbolitem *__item=searchsymboltablebyid(table,__i+table->bias);	\
+      func(__item->attr);						\
+    }									\
+  }while(0)
+
 symboltable* createsymboltable(size_t size,int bias);
 int insertsymboltable(symboltable* st,char *str,symbolattr *attr);
 symbolitem* searchsymboltablebyname(symboltable *st,char *str);
@@ -156,6 +164,12 @@ void symboltablesetoption(symboltable *table,symboltableoption *option)
   memcpy(&(table->option),option,sizeof(symboltableoption));
 }
 
+//===========================================
+void disassembleor(symboltable *table)
+{
+  iterate_symbol_attr(table,_disassembleor);
+}
+
 //============================================
 #define symbolderivename(newname,oriname,ulen)			\
   char *newname=(char*)malloc(strlen(oriname)+1+ulen);		\
@@ -186,7 +200,7 @@ void extractleftlcpone(symboltable *table,int id)
   while(1){
     prodfindlcp(prod,mark,res,lcp,len,restlen);
     
-    if(listisempty(lcp->list)){
+    if(listisempty(lcp->list)){ //no any lcp
       break;
     }
     //we should promise that no empty symbol
@@ -200,10 +214,11 @@ void extractleftlcpone(symboltable *table,int id)
       productionbody *tmp=prodbodynext(pbpos);
       if(mark[i]==1){
 	productiondrop(prod,pbpos);
-	printslist(pbpos->body);
+	//printslist(pbpos->body);
 	if(restlen[i]!=0){
 	  productionbody *pb=createprodbodywithpbody(res[i],restlen[i]);
 	  productionappend(newprod,pb);
+	  //TODO: CLEAN ORIGIN PB
 	}
 	else
 	  hasempty=1;
@@ -228,6 +243,7 @@ void extractleftlcp(symboltable *table)
     extractleftlcpone(table,id);
   }
 }
+
 //===============================toposort
 void symboltoposort(symboltable *table);
 
@@ -310,6 +326,8 @@ void elimateleftrecursion(symboltable *table)
 //============================type,mapper
 //solve left recursion before
 void symbolsettype(symboltable *table);
+void printsymbolattr(symboltable *table);
+
 void symbolsetmapper(symboltable *table);
 void _symbolsetmapper(symboltable *table,production *prod,int mapto);
 
@@ -325,6 +343,13 @@ void symbolsettype(symboltable *table)
   }
 }
 
+void printsymbolattr(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    _printsymbolattr(item->attr);
+  }
+}
 void symbolsetmapper(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
@@ -406,13 +431,15 @@ void printreexpset(symboltable *table)
   }
 }
 //========================print/test
-void printproductionwithname(symboltable *table,int seq);
+//option==0 print in id order
+//option==1 print in toposort order
+void printproductionwithname(symboltable *table,int option);
 
-void printproductionwithname(symboltable *table,int seq)
+void printproductionwithname(symboltable *table,int option)
 {
   for(int i=0;i<table->count;i++){
     int id;
-    if(id==1)
+    if(option==0)
       id=i+table->bias;
     else
       id=table->toposort[i];
@@ -425,15 +452,21 @@ void printproductionwithname(symboltable *table,int seq)
     productionbody *pbpos;
     list_for_each_entry(pbpos,&(prod->productionbody->list),list){
       printf("cnt %d\n",pbpos->cnt);
-      pbody *pbody=pbpos->body;
-      slist *position;
+      pbody *body=pbpos->body;
+      pbody *position;
       printf("  ");
-      list_for_each_entry(position,&(pbody->list),list){
-	int body=(int)(position->key);
-	if(body<table->bias)
-	  printf("%c ",(char)body);
+      pbody_for_each(position,(pbpos->body)){
+	int key=(int)(position->key);
+	if(key=='\''){
+	  pbody *pbodytmp=getpbodynext(position);
+	  int tmpkey=getpbodykey(pbodytmp);
+	  printf("%c ",(char)tmpkey);
+	  position=(getpbodynext(pbodytmp));
+	}
+	else if(key<table->bias)
+	  printf("%c ",(char)key);
 	else{
-	  item=searchsymboltablebyid(table,body);
+	  item=searchsymboltablebyid(table,key);
 	  printf("%s ",item->name);
 	}
       }
@@ -442,4 +475,5 @@ void printproductionwithname(symboltable *table,int seq)
     printf("\n");
   }
 }
+
 #endif

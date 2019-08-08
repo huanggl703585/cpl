@@ -17,6 +17,12 @@ struct tokenlist{
   token *tlist;
 };
 
+#define tokennext(tokenpt)			\
+  list_next_entry(tokenpt,list)
+
+#define tokenlistfirst(tlisthead)		\
+  list_first_entry(&(tlisthead->tlist->list),token,list)
+
 #define appendtokenlist(tokenlist,gindex,sindex) ({		\
     token *__tmp=createtoken(gindex,sindex);			\
     listaddtail(&(__tmp->list),&(tokenlist->tlist->list));	\

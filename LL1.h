@@ -1,7 +1,10 @@
 #ifndef __BUILDFIRST_H
 #define __BUILDFIRST_H
 
+#include "sliststack.h"
 #include "symboltable.h"
+#include "tokenlist.h"
+#include "ast.h"
 
 //=======================build first set
 void buildfirst(symboltable *table);
@@ -178,6 +181,7 @@ void printfirstandfollow(symboltable *table)
 //===========================forecast table
 
 typedef kvpair forecastitem;
+//key is a terminal index, value is pbody
 
 #define createforecastitem(key,value)			\
   (forecastitem*)_createkvpair((void*)key,(void*)value)
@@ -192,6 +196,10 @@ typedef kvpair forecastitem;
   
 void buildforecasttable(symboltable *table);
 void _buildforecasttable(symboltable *table,int head,pbody *body);
+
+int forecastcmp(void *a,void *b);
+//M[X,a], X is argument first, a is argument second
+pbody *findforecasttable(symboltable *table,int first,int second);
 
 void _printforecastlist(darray *darr);
 void printforecasttable(symboltable *table);
@@ -242,6 +250,23 @@ void _buildforecasttable(symboltable *table,int head,pbody *body)
   }
 }
 
+pbody *findforecasttable(symboltable *table,int first,int second)
+{
+  symbolitem *item=searchsymboltablebyid(table,first);
+  darray *forecastlist=item->attr->forecastlist;
+  void *ret=sortfinddarray(forecastlist,second,forecastcmp);
+  if(ret==NULL) return NULL;
+  return (pbody*)(((forecastitem*)ret)->value);
+}
+
+int forecastcmp(void *a,void *b)
+{
+  forecastitem *_a=(forecastitem*)a;
+  forecastitem *_b=(forecastitem*)b;
+  int ka=(int)(_a->key),kb=(int)(_b->key);
+  return intcmp(ka,kb);
+}
+
 void printforecasttable(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
@@ -260,4 +285,43 @@ void _printforecastlist(darray *darr)
   }
   printf("\n");
 } 
+
+//=========================parsing
+
+ast* LL1parsing(tokenlist *tlist);
+
+ast* LL1parsing(tokenlist *tlist)
+{
+  symboltable *table=tlist->gtable;
+  //TODO: table->bias should be replaced as start symbol
+  int startsymbol=table->bias;
+  
+  sliststack *stack=createsliststack();
+  initslist(tmpstart,startsymbol);
+  sliststackpush(stack,tmpstart);
+  
+  ast *ast=createast(table);
+  initast(ast,startsymbol);
+
+  astnode *astpt=ast->root;
+  token *tokenpt=tokenlistfirst(tlist);
+  int stacktop;
+  while((stacktop=(int)getsliststacktop(stack))!=(int)NULL){
+    if(stacktop==tokenpt->gindex){
+      sliststackpop(stack);
+      tokenpt=tokennext(tokenpt);
+    }
+    else if(tokenpt->sindex < table->bias){
+      return NULL;
+    }
+    else{
+      pbody *forecast=findforecasttable(table,stacktop,tokenpt->gindex);
+      if(forecast==NULL) return NULL;
+      //expandast(astpt,forecast);
+      sliststackpop(stack);
+      sliststackpush(stack,forecast);
+    }
+  }
+  return ast;
+}
 #endif

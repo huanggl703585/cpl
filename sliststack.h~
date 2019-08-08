@@ -1,0 +1,28 @@
+#ifndef __SLISTSTACK_H
+#define __SLISTSTACK_H
+
+typedef slist sliststack;
+
+sliststack *createsliststack();
+void sliststackpush(sliststack *stack,slist *new);
+slist* sliststackpop(sliststack *stack);
+
+sliststack *createsliststack()
+{
+  initslist(ret,0);
+  return (sliststack*)ret;
+}
+
+void sliststackpush(sliststack *stack,slist *new)
+{
+  initslist(padding,0);
+  slistreplace(padding,new);
+}
+
+slist* sliststackpop(sliststack *stack)
+{
+  initslist(ret,0);
+  slist *target=stack->prev
+}
+
+#endif

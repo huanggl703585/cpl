@@ -4,50 +4,10 @@
 #include "slist.h"
 #include "dynamicarray.h"
 #include "re_exp.h"
+#include "pbodyunit.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
-
-//we assume the the head of pbody is 0(NULL)  
-typedef slist pbody;
-
-#define pbody_for_each(pos,listhead)		\
-  slist_for_each(pos,listhead)
-
-#define createpbody(pos) 					\
-  do{									\
-    initslist(__newpbody,NULL);						\
-    pos=__newpbody;							\
-  }while(0)
-
-void appendpbody(pbody *listhead,int elem)
-{
-  initslist(tmp,elem);
-  appendslist(tmp,listhead);
-}
-/*
-#define appendpbody(listhead,elem)		\
-  do{						\
-     initslist(__newpbody,elem);		\
-     appendslist(__newpbody,listhead);		\
-  }while(0)
-*/
-#define getpbodykey(body)			\
-  (int)(body->key)				
-
-#define getpbodynext(body)			\
-  list_next_entry(body,list)
-
-void pbodyappendlistwithlen(pbody *listhead,pbody *newlist,int len)
-{
-  int tmp=len;						
-  pbody *pos=newlist;						
-  while(tmp--){						
-    pos=getpbodynext(pos);					
-    int key=getpbodykey(pos);					
-    appendpbody(listhead,key);				
-  }
-}
 
 typedef struct productionbody productionbody;
 struct productionbody{
@@ -86,16 +46,25 @@ struct production{
   prod->cnt--;
 
 #define appendprodbody(prodbody,elem)		\
-  appendpbody(prodbody->body,elem);		\
+  _appendprodbody(prodbody,elem);		\
   prodbody->cnt++
 
-#define appendprodrange(prod,lower,upper)			\
-  do{								\
-    for(int __i=lower;__i<=upper;__i++){			\
-      productionbody *__pbpos=createproductionbody(prod);	\
-      appendprodbody(__pbpos,__i);				\
-    }								\
-    prod->cnt+=(upper-lower+1);					\
+#define appendprodbodyterminal(prodbody,elem)	\
+  _appendprodbody(prodbody,'\'');		\
+  _appendprodbody(prodbody,elem);		\
+  _appendprodbody(prodbody,'\'');		\
+  prodbody->cnt++
+
+#define _appendprodbody(prodbody,elem)		\
+  appendpbody(prodbody->body,elem)
+
+#define appendprodrange(prod,lower,upper)				\
+  do{									\
+    for(int __i=lower;__i<=upper;__i++){				\
+      productionbody *__pbpos=createproductionbody(prod);		\
+      appendprodbodyterminal(__pbpos,__i);				\
+    }									\
+    prod->cnt+=(upper-lower+1);						\
   }while(0)
 
 productionbody *_createproductionbody();
@@ -226,52 +195,56 @@ int prodisterminalset(production *prod)
   }
   return 1;
 }
+  
+//========================
+//disassemble a production with 'or'('|') into multiple production
+//for example, a|b => a and another production b, here a & b is a pbody unit
+//another example, (ab)|a -> ab and another production a, here we elimate parentheses
+void dodisassembleor(production *prod);
+void _dodisassembleor(production *prod,productionbody *prodbody);
 
-//pbody unit : if next symbol is '(' ,unit is segment between two parentheses
-//             else, is the next symbol
-//body will move forward to the tail of unit
-#define pbodygetnextunit(body,head,res,len)		\
-  do{							\
-    res=body;						\
-    body=list_next_entry(body,list);			\
-    int key=(int)(body->key);				\
-    len=1;						\
-    if(key=='('){					\
-      while(key!=')'){					\
-	body=list_next_entry(body,list);		\
-	key=getpbodykey(body);				\
-	len++;						\
-      }							\
-    }							\
-  }while(0)
-
-int pbodyunitequal(pbody *u1,int ulen1,pbody *u2,int ulen2)
+void dodisassembleor(production *prod)
 {
-  if(ulen1!=ulen2) return 0;
-  pbody *tmp1=u1,*tmp2=u2;
-  int key1,key2;
-  int tmp=ulen1;
-  while(tmp--){
-    tmp1=getpbodynext(tmp1);
-    tmp2=getpbodynext(tmp2);
-    key1=getpbodykey(tmp1);
-    key2=getpbodykey(tmp2);
-    if(key1!=key2) return 0;
+  productionbody *pbpos;
+  prodbody_for_each(pbpos,prod){
+    _dodisassembleor(prod,pbpos);
   }
-  return 1;
 }
+
+void _dodisassembleor(production *prod,productionbody *prodbody)
+{
+  pbody *head=prodbody->body;
+  pbody *iter=head;
+  pbody *firstunit;
+  pbody *secondunit;
+  int firstlen,secondlen;
+  
+  int flag=1;
+  do{
+    pbodygetnextunit(iter,head,firstunit,firstlen);
+    pbodygetnextunit(iter,head,secondunit,secondlen);
     
-void printpbodyunit(pbody *body,int len){
-  printf("len %d\t",len);			
-  pbody* pos=getpbodynext(body);		
-  int tmp=len;				
-  while(tmp--){				
-    int key=getpbodykey(pos);			
-    printf("%d ",key);			
-    pos=getpbodynext(pos);			
-  }						
-  printf("\n");				
+    pbody *test=getpbodynext(firstunit);
+    int testkey=getpbodykey(test);
+
+    pbody *secondnext=getpbodynext(secondunit);
+    int key=getpbodykey(secondnext);
+
+    printf("%d %d\n",testkey,key);
+    /*if(secondlen==1 && key=='|'){
+      //pbodyunittestelimateparenthese(firstunit,&firstlen);
+      productionbody *tmp=createprodbodywithpbody(firstunit,firstlen);
+      productionappend(prod,tmp);
+      //pbodyunitdel(firstunit,firstlen);
+    }
+    else 
+    flag=0;*/
+    if(key==0) flag=0;
+  }while(flag==1);
+  printf("\n");
 }
+
+//========================lcp
 
 //longest common prefix
 //in:prod ; out: other
@@ -287,13 +260,13 @@ void printpbodyunit(pbody *body,int len){
   pbody *_lcp;								\
   int _len=0;								\
   do{									\
-    pbody *origin[_prod->cnt];						\
+    pbody *_origin[_prod->cnt];						\
     createpbody(_lcp);							\
     productionbody *prodbody=_prod->productionbody;			\
     for(int i=0;i<_prod->cnt;i++){					\
       prodbody=list_next_entry(prodbody,list);				\
       _res[i]=prodbody->body;						\
-      origin[i]=prodbody->body;						\
+      _origin[i]=prodbody->body;					\
       _mark[i]=1;							\
       _restlen[i]=prodbody->cnt;					\
     }									\
@@ -335,7 +308,7 @@ void printpbodyunit(pbody *body,int len){
       }									\
     }									\
     for(int i=0;i<_prod->cnt && _mark[i]==0;i++)			\
-      _res[i]=origin[i];						\
+      _res[i]=_origin[i];						\
   }while(0)
 
 //====================left recursion

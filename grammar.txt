@@ -1,0 +1,21 @@
+
+token ::= identifier | equivalence | '|' | '(' | ')'
+
+identifier ::= identifier-nondigit
+	   ::= identifier identifier-nondigit
+	   ::= identifier digit
+
+equivalence ::= ':' ':' '='
+
+identifier-nondigit ::= _ | alpha
+
+digit ::= 0-9
+
+alpha ::= a-z | A-Z
+
+0 token
+1 identifier
+2 equivalence
+3 identifier-nondigit
+4 digit
+5 alpha

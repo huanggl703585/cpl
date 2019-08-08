@@ -10,6 +10,8 @@
 #include <assert.h>
 #include <stdio.h>
 
+//input must not have empty char
+
 typedef struct tokenizer tokenizer;
 struct tokenizer{
   reader *reader;
