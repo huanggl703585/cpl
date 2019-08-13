@@ -13,12 +13,18 @@ typedef slist pbody;
     pos=__newpbody;							\
   }while(0)
 
+void appendpbody(pbody *listhead,int elem)
+{
+  initslist(tmp,elem);
+  appendslist(tmp,listhead);
+}
+/*
 #define appendpbody(listhead,elem)		\
   do{						\
      initslist(__newpbody,elem);		\
      appendslist(__newpbody,listhead);		\
   }while(0)
-
+*/
 #define getpbodykey(body)			\
   (int)(body->key)				
 
@@ -28,20 +34,18 @@ typedef slist pbody;
 #define getpbodyprev(body)			\
   list_last_entry(body,list)
 
-#define pbodydrop(body)				\
-  slist_drop(body)
+#define pbodydel(body)				\
+  slist_del(body)
 
-void pbodyelimateparenthese(pbody *pos);
-
-void pbodyelimateparenthese(pbody *pos)
+void pbodyappendlistwithlen(pbody *listhead,pbody *newlist,int len)
 {
-  pbody *iter=pos;
-  int key;
-  while((key=getpbodykey(iter))!=')'){
-    iter=getpbodynext(iter);
+  int tmp=len;						
+  pbody *pos=newlist;						
+  while(tmp--){						
+    pos=getpbodynext(pos);					
+    int key=getpbodykey(pos);					
+    appendpbody(listhead,key);				
   }
-  pbodydrop(pos);
-  pbodydrop(iter);
 }
 
 #endif

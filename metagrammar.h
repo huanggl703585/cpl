@@ -5,7 +5,7 @@
 #include "production.h"
 #include "grammar.h"
 
-#include "LL1.h"
+//#include "LL1.h"
 
 //meta-grammar means that we use that grammar to read other grammar
 char *path="cgrammer.txt";
@@ -38,7 +38,7 @@ int buildmetagrammar()
   spos=searchsymboltablebyid(table,array[0]);
   spos->attr->attr.prod=createproduction(array[0]);
   ppos=spos->attr->attr.prod;
-  pbpos=createproductionbody(ppos);
+  pbpos=createprodbodylinkprod(ppos);
   appendprodbody(pbpos,array[1]);
   appendprodbody(pbpos,'|');
   appendprodbody(pbpos,array[2]);
@@ -54,30 +54,33 @@ int buildmetagrammar()
   //           ::= identifier digit
   spos=searchsymboltablebyid(table,array[1]);
   ppos=spos->attr->attr.prod=createproduction(array[1]);
-  pbpos=createproductionbody(ppos);
+  pbpos=createprodbodylinkprod(ppos);
   appendprodbody(pbpos,array[3]);
-  pbpos=createproductionbody(ppos);
+  pbpos=createprodbodylinkprod(ppos);
   appendprodbody(pbpos,array[1]);
   appendprodbody(pbpos,array[3]);
-  pbpos=createproductionbody(ppos);
+  pbpos=createprodbodylinkprod(ppos);
   appendprodbody(pbpos,array[1]);
   appendprodbody(pbpos,array[4]);
 
   //equivalence ::= ':' ':' '='
   spos=searchsymboltablebyid(table,array[2]);
   ppos=spos->attr->attr.prod=createproduction(array[2]);
-  pbpos=createproductionbody(ppos);
+  pbpos=createprodbodylinkprod(ppos);
   appendprodbodyterminal(pbpos,':');
   appendprodbodyterminal(pbpos,':');
   appendprodbodyterminal(pbpos,'=');
 
   //identifier-nondigit ::= '_' | alpha
+  //when in debug: identifier-nondigit ::= ( '_' | alpha )
   spos=searchsymboltablebyid(table,array[3]);
   ppos=spos->attr->attr.prod=createproduction(array[3]);
-  pbpos=createproductionbody(ppos);
-  appendprodbody(pbpos,'_');
+  pbpos=createprodbodylinkprod(ppos);
+  appendprodbody(pbpos,'(');
+  appendprodbodyterminal(pbpos,'_');
   appendprodbody(pbpos,'|');
   appendprodbody(pbpos,array[5]);
+  appendprodbody(pbpos,')');
 
   //digit
   spos=searchsymboltablebyid(table,array[4]);
@@ -90,13 +93,17 @@ int buildmetagrammar()
   appendprodrange(ppos,'a','z');
   appendprodrange(ppos,'A','Z');
 
+  prodinunit(table);
+  elimateparenthese(table);
+  elimateor(table);
+  printtablepunit(table);
   //disassembleor(table);
   //symbolsettype(table);
   //printsymbolattr(table);
   //extractleftlcp(table);
   //elimateleftrecursion(table);
   //symbolsettype(table);
-  printproductionwithname(table,0);
+  //printproductionwithname(table,0);
   //symbolsetmapper(table);
   //symboltoposort(table);
   //prodsettoreexp(table);

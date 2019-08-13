@@ -42,7 +42,7 @@ symbolattr *createsymbolattr()
 /*
   non-terminal set type
   terminal set mapper
-*/
+*//*
 void symbolsetattr(symbolattr *attr);
 void _printsymbolattr(symbolattr *attr);
 
@@ -69,10 +69,40 @@ void _printsymbolattr(symbolattr *attr)
   default:assert(0);
   } 
 }
+  */
+//==============================
+void _prodinunit(symbolattr *attr);
+void _printtablepunit(symbolattr *attr);
+void _elimateparenthese(symbolattr *attr);
+void _elimateor(symbolattr *attr);
 
-void _disassembleor(symbolattr *attr)
+void _prodinunit(symbolattr *attr)
 {
-  dodisassembleor(attr->attr.prod);
+  production *prod=attr->attr.prod;
+  productionbody *pbpos;
+  prod_for_each_prodbody(pbpos,prod){
+    prodbodypbodytounit(pbpos);
+  }
 }
 
+void _printtablepunit(symbolattr *attr)
+{
+  production *prod=attr->attr.prod;
+  productionbody *pbpos;
+  prod_for_each_prodbody(pbpos,prod){
+    pbodyunit *unit=pbpos->unit;
+    printpbodyunit(unit);
+    printf("\n");
+  }
+}
+
+void _elimateparenthese(symbolattr *attr)
+{
+  prodelimateparenthese(attr->attr.prod);
+}
+
+void _elimateor(symbolattr *attr)
+{
+  prodelimateor(attr->attr.prod);
+}
 #endif

@@ -253,54 +253,6 @@ int prodisterminalset(production *prod)
   }
   return 1;
 }
-  
-//========================
-//disassemble a production with 'or'('|') into multiple production
-//for example, a|b => a and another production b, here a & b is a pbody unit
-//another example, (ab)|a -> ab and another production a, here we elimate parentheses
-void dodisassembleor(production *prod);
-void _dodisassembleor(production *prod,productionbody *prodbody);
-
-void dodisassembleor(production *prod)
-{
-  productionbody *pbpos;
-  prodbody_for_each(pbpos,prod){
-    _dodisassembleor(prod,pbpos);
-  }
-}
-
-void _dodisassembleor(production *prod,productionbody *prodbody)
-{
-  pbody *head=prodbody->body;
-  pbody *iter=head;
-  pbody *firstunit;
-  pbody *secondunit;
-  int firstlen,secondlen;
-  
-  int flag=1;
-  do{
-    pbodygetnextunit(iter,head,firstunit,firstlen);
-    pbodygetnextunit(iter,head,secondunit,secondlen);
-    
-    pbody *test=getpbodynext(firstunit);
-    int testkey=getpbodykey(test);
-
-    pbody *secondnext=getpbodynext(secondunit);
-    int key=getpbodykey(secondnext);
-
-    printf("%d %d\n",testkey,key);
-    /*if(secondlen==1 && key=='|'){
-      //pbodyunittestelimateparenthese(firstunit,&firstlen);
-      productionbody *tmp=createprodbodywithpbody(firstunit,firstlen);
-      productionappend(prod,tmp);
-      //pbodyunitdel(firstunit,firstlen);
-    }
-    else 
-    flag=0;
-    if(key==0) flag=0;
-  }while(flag==1);
-  printf("\n");
-}
 
 //========================lcp
 

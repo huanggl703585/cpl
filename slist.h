@@ -14,9 +14,8 @@ struct slist{
 #define slist_last(listhead)			\
   list_last_entry(&(listhead->list),slist,list)
 
-#define slist_del(listentry)			\
-  listdel(&(listentry->list));			\
-  free(listentry)
+#define slist_drop(listentry)			\
+  listdrop(&(listentry->list))
 
 #define appendslist(new,chain)			\
   listaddtail(&(((slist*)new)->list),&(((slist*)chain)->list))

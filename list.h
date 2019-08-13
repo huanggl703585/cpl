@@ -39,19 +39,19 @@ void listaddtail(struct list_head *new,
   __list_add(new,next,(next->prev));
 }
 
-void __list_del(struct list_head *prev,
+void __list_drop(struct list_head *prev,
 		struct list_head *next)
 {
   prev->next=next;
   next->prev=prev;
 }
 
-void listdel(struct list_head *l)
+void listdrop(struct list_head *l)
 {
-  __list_del(l->prev,l->next);
+  __list_drop(l->prev,l->next);
 }
    
-void listreplace(struct list_head *origin,struct list_head *newhead)
+void listreplace(struct list_head *newhead,struct list_head *origin)
 {
   origin->prev->next=newhead->next;
   origin->next->prev=newhead->prev;
@@ -87,6 +87,9 @@ void listappend(struct list_head *head,struct list_head *new)
 
 #define list_next_entry(pos,member)			\
   list_entry((pos)->member.next,typeof(*pos),member)  
+
+#define list_prev_entry(pos,member)			\
+  list_entry((pos)->member.prev,typeof(*pos),member)
 
 //head is a ptr
 #define list_for_each_entry(pos,head,member)		\

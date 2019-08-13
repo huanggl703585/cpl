@@ -165,11 +165,36 @@ void symboltablesetoption(symboltable *table,symboltableoption *option)
 }
 
 //===========================================
+void prodinunit(symboltable *table);
+void disassembleor(symboltable *table);
+void elimateparenthese(symboltable *table);
+void elimateor(symboltable *table);
+void printtablepunit(symboltable *table);
+
+void prodinunit(symboltable *table)
+{
+  iterate_symbol_attr(table,_prodinunit);
+}
+/*
 void disassembleor(symboltable *table)
 {
   iterate_symbol_attr(table,_disassembleor);
 }
+*/
+void printtablepunit(symboltable *table)
+{
+  iterate_symbol_attr(table,_printtablepunit);
+}
 
+void elimateparenthese(symboltable *table)
+{
+  iterate_symbol_attr(table,_elimateparenthese);
+}
+
+void elimateor(symboltable *table)
+{
+  iterate_symbol_attr(table,_elimateor);
+}
 //============================================
 #define symbolderivename(newname,oriname,ulen)			\
   char *newname=(char*)malloc(strlen(oriname)+1+ulen);		\
@@ -187,7 +212,7 @@ int derivenewsymbol(symboltable *table,symbolitem *origin)
   symbolderivename(newname,origin->name,origin->derivecnt);
   return insertsymboltable(table,newname,NULL);
 }
-
+/*
 //for one symbol
 //it rely on symbolsettype
 void extractleftlcpone(symboltable *table,int id)
@@ -243,7 +268,7 @@ void extractleftlcp(symboltable *table)
     extractleftlcpone(table,id);
   }
 }
-
+*/
 //===============================toposort
 void symboltoposort(symboltable *table);
 
@@ -281,7 +306,7 @@ void symboltoposort(symboltable *table)
 
 //========================left recursion
 void elimateleftrecursion(symboltable *table);
-
+/*
 //it rely on extract left lcp
 void elimateleftrecursion(symboltable *table)
 {
@@ -322,7 +347,7 @@ void elimateleftrecursion(symboltable *table)
     }
   }
 }
-
+*/
 //============================type,mapper
 //solve left recursion before
 void symbolsettype(symboltable *table);
@@ -333,7 +358,7 @@ void _symbolsetmapper(symboltable *table,production *prod,int mapto);
 
 #define havemapper(table,id)			\
   (table->terminal[id]!=NULL)
-
+/*
 void symbolsettype(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
@@ -375,8 +400,10 @@ void _symbolsetmapper(symboltable *table,production *prod,int mapto)
     charmapperappend(table->terminal[id],mapto);
   }
 }
+*/
 //========================re_exp
 //TODO : IT SHOULD MOVE TO GRAMMAR.H
+/*
 void prodsettoreexp(symboltable *table);
 void symbolreexptransit(symboltable *table,re_exp *re,int changesign);
 void printreexpset(symboltable *table); 
@@ -430,6 +457,7 @@ void printreexpset(symboltable *table)
       printreexp(item->attr->reexp);
   }
 }
+*/
 //========================print/test
 //option==0 print in id order
 //option==1 print in toposort order
