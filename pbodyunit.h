@@ -46,10 +46,10 @@ struct pbodyunit{
   listreplace(&(newhead->list),&(replacedpos->list))
 
 pbodyunit *createpbodyunit();
+pbodyunit *_pbodyunitcopy(pbodyunit *u);
+pbodyunit *pbodyunitcopy(pbodyunit *list,pbodyunit *end);
 pbodyunit *getunitbypbody(pbody *head,pbody *end);
 pbodyunit *_getunitbypbody(pbody *head,pbody *end,pbody **newhead);
-
-//int pbodyunitequal(pbodyunit *u1,pbodyunit *u2);
 
 void printpbodyunittype(int type);
 void _printpbodyunit(pbodyunit *u);
@@ -63,7 +63,9 @@ void pbodyunitelimateparenthese(pbodyunit *listhead);
 
 int _testpbodyunitelimateor(pbodyunit *listhead);
 
-int pbodyunitisequal(pbodyunit *u1,pbodyunit *u2);
+int _pbodyunitisequal(pbodyunit *u1,pbodyunit *u2);
+int pbodyunitisequal(pbodyunit *list1,pbodyunit *list2);
+int pbodyunitfindlcp(pbodyunit **unitarr,int mark[],int size,pbodyunit **head,int *headindex);
 
 pbodyunit *createpbodyunit()
 {
@@ -72,6 +74,28 @@ pbodyunit *createpbodyunit()
   ret->value.index=0;
   ret->type=0;
   return ret;
+}
+
+pbodyunit *_pbodyunitcopy(pbodyunit *u)
+{
+  pbodyunit *ret=createpbodyunit();
+  ret->type=u->type;
+  ret->value.index=u->value.index;
+  if(u->type==P_COMBINE)
+    ret->value.nest=pbodyunitcopy(u->value.nest,u->value.nest);
+      
+  return ret;
+}
+
+pbodyunit *pbodyunitcopy(pbodyunit *list,pbodyunit *end)
+{
+  pbodyunit *ret=createpbodyunit();
+  pbodyunit *pos;
+  for_each_pbodyunit(pos,list){
+    if(list==end) break;
+    pbodyunit *copyright=_pbodyunitcopy(pos);
+    pbodyunitappend(copyright,ret);
+  }
 }
 
 pbodyunit *getunitbypbody(pbody *head,pbody *end)
@@ -248,8 +272,85 @@ int _testpbodyunitelimateor(pbodyunit *listhead)
 }
 
 //compare two single pbodyunit
-int pbodyunitisequal(pbodyunit *u1,pbodyunit *u2)
+int _pbodyunitisequal(pbodyunit *u1,pbodyunit *u2)
 {
-  
+  int type1=u1->type,type2=u2->type;
+  if(u1->type != u2->type) return 0;
+
+  if(u1->type!=P_COMBINE)
+    return (u1->value.index==u2->value.index) && u1->value.index!=0;
+  pbodyunit *nest1=u1->value.nest;
+  pbodyunit *nest2=u2->value.nest;
+  return pbodyunitisequal(nest1,nest2);
 }
+
+int pbodyunitisequal(pbodyunit *list1,pbodyunit *list2)
+{
+  for(pbodyunit *pos1=pbodyunitnext(list1),*pos2=pbodyunitnext(list2);
+      pos1!=list1 || pos2!=list2;
+      pos1=pbodyunitnext(pos1),pos2=pbodyunitnext(pos2)){
+    if(_pbodyunitisequal(pos1,pos2)==0)
+      return 0;
+  }
+  return 1;
+}
+
+int pbodyunitfindlcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,int *headindex)
+{
+  pbodyunit *origin[size];
+  for(int i=0;i<size;i++){
+    origin[i]=unitarr[i];
+    unitarr[i]=pbodyunitnext(unitarr[i]);
+    mark[i]=1;
+  }
+  int lcpisempty=1;
+  while(1){
+    //step1 : find a "seed", here we find a common pbodyunit between two list
+    pbodyunit *common=NULL;
+    int i,j;
+    for(i=0;i<size-1;i++){
+      if(mark[i]!=0){
+	for(j=i+1;j<size;j++){
+	  if(mark[j]!=0){
+	    int hascommon=_pbodyunitisequal(unitarr[i],unitarr[j]);
+	    if(hascommon){
+	      common=unitarr[i];
+	      if(lcpisempty==1) lcpisempty=0;
+	      goto findeverycommon;
+	    }
+	  }
+	}
+      }
+    }
+    //if can't find the common between every two list, then have not any longer common prefix
+    if(common==NULL) break;
+
+    //step 2 : find every list that has common pbodyunit, if a list has not, then its mark==0
+  findeverycommon:
+    for(int k=0;k<size;k++)
+      if(k!=i || k!=j)
+	if(!(_pbodyunitisequal(common,unitarr[k])))
+	  mark[k]=0;
+
+    //step 3 : for every list that has common pbodyunit, the list point to next pbodyunit
+    for(int k=0;k<size;k++)
+      if(mark[k]!=0)
+	unitarr[k]=pbodyunitnext(unitarr[k]);
+  }
+    
+  //step 4 : restore the list that don't fit the prefix
+  for(int i=0;i<size;i++)
+    if(mark[i]==0)
+      unitarr[i]=origin[i];
+
+  if(lcpisempty==1) return 0;
+  for(int i=0;i<size;i++)
+    if(mark[i]!=0){
+      *head=origin[i];
+      *headindex=i;
+      return 1;
+    }
+  return 0;
+}
+
 #endif

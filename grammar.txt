@@ -13,6 +13,7 @@ digit ::= 0-9
 
 alpha ::= a-z | A-Z
 
+127+
 0 token
 1 identifier
 2 equivalence

@@ -96,11 +96,11 @@ int buildmetagrammar()
   prodinunit(table);
   elimateparenthese(table);
   elimateor(table);
+  extractleftlcp(table);
+  
   printtablepunit(table);
-  //disassembleor(table);
   //symbolsettype(table);
   //printsymbolattr(table);
-  //extractleftlcp(table);
   //elimateleftrecursion(table);
   //symbolsettype(table);
   //printproductionwithname(table,0);

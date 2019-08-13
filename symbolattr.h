@@ -30,12 +30,12 @@ struct symbolattr{
   darray *forecastlist;
 };
 
-symbolattr *createsymbolattr();
+symbolattr *createsymbolattr(int id);
 
-symbolattr *createsymbolattr()
+symbolattr *createsymbolattr(int id)
 {
   symbolattr *ret=(symbolattr*)malloc(sizeof(symbolattr));
-  ret->attr.prod=NULL;
+  ret->attr.prod=createproduction(id);
   return ret;
 }
 
@@ -75,6 +75,7 @@ void _prodinunit(symbolattr *attr);
 void _printtablepunit(symbolattr *attr);
 void _elimateparenthese(symbolattr *attr);
 void _elimateor(symbolattr *attr);
+void _extractleftlcp(symbolattr *attr);
 
 void _prodinunit(symbolattr *attr)
 {
@@ -88,6 +89,7 @@ void _prodinunit(symbolattr *attr)
 void _printtablepunit(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
+  printf("prodcnt %d\n",prod->cnt);
   productionbody *pbpos;
   prod_for_each_prodbody(pbpos,prod){
     pbodyunit *unit=pbpos->unit;
@@ -105,4 +107,5 @@ void _elimateor(symbolattr *attr)
 {
   prodelimateor(attr->attr.prod);
 }
+
 #endif

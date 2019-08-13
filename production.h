@@ -55,7 +55,7 @@ struct production{
 
 #define productiondrop(prod,prodbody)		\
   listdrop(&(prodbody->list));			\
-  prod->cnt--;
+  prod->cnt--
 
 #define appendprodrange(prod,lower,upper)				\
   do{									\
@@ -63,7 +63,6 @@ struct production{
       productionbody *__pbpos=createprodbodylinkprod(prod);		\
       appendprodbodyterminal(__pbpos,__i);				\
     }									\
-    prod->cnt+=(upper-lower+1);						\
   }while(0)
 
 productionbody *createprodbody();
@@ -253,121 +252,6 @@ int prodisterminalset(production *prod)
   }
   return 1;
 }
-  
-//========================
-//disassemble a production with 'or'('|') into multiple production
-//for example, a|b => a and another production b, here a & b is a pbody unit
-//another example, (ab)|a -> ab and another production a, here we elimate parentheses
-void dodisassembleor(production *prod);
-void _dodisassembleor(production *prod,productionbody *prodbody);
-
-void dodisassembleor(production *prod)
-{
-  productionbody *pbpos;
-  prodbody_for_each(pbpos,prod){
-    _dodisassembleor(prod,pbpos);
-  }
-}
-
-void _dodisassembleor(production *prod,productionbody *prodbody)
-{
-  pbody *head=prodbody->body;
-  pbody *iter=head;
-  pbody *firstunit;
-  pbody *secondunit;
-  int firstlen,secondlen;
-  
-  int flag=1;
-  do{
-    pbodygetnextunit(iter,head,firstunit,firstlen);
-    pbodygetnextunit(iter,head,secondunit,secondlen);
-    
-    pbody *test=getpbodynext(firstunit);
-    int testkey=getpbodykey(test);
-
-    pbody *secondnext=getpbodynext(secondunit);
-    int key=getpbodykey(secondnext);
-
-    printf("%d %d\n",testkey,key);
-    /*if(secondlen==1 && key=='|'){
-      //pbodyunittestelimateparenthese(firstunit,&firstlen);
-      productionbody *tmp=createprodbodywithpbody(firstunit,firstlen);
-      productionappend(prod,tmp);
-      //pbodyunitdel(firstunit,firstlen);
-    }
-    else 
-    flag=0;
-    if(key==0) flag=0;
-  }while(flag==1);
-  printf("\n");
-}
-
-//========================lcp
-
-//longest common prefix
-//in:prod ; out: other
-//mark is a int array, size is prod->cnt
-//res is a pbody array, size if prod->cnt
-//lcp is a pbody, it will init in the macro
-//len is a int
-//restlen is a int array, it just suitable for those mark[i]==1
-#define prodfindlcp(_prod,_mark,_res,_lcp,_len,_restlen)		\
-  int _mark[_prod->cnt];						\
-  int _restlen[_prod->cnt];						\
-  pbody *_res[_prod->cnt];						\
-  pbody *_lcp;								\
-  int _len=0;								\
-  do{									\
-    pbody *_origin[_prod->cnt];						\
-    createpbody(_lcp);							\
-    productionbody *prodbody=_prod->productionbody;			\
-    for(int i=0;i<_prod->cnt;i++){					\
-      prodbody=list_next_entry(prodbody,list);				\
-      _res[i]=prodbody->body;						\
-      _origin[i]=prodbody->body;					\
-      _mark[i]=1;							\
-      _restlen[i]=prodbody->cnt;					\
-    }									\
-    int flag=1;								\
-    while(flag){							\
-      pbody *unit[_prod->cnt];						\
-      int unitlen[_prod->cnt];						\
-      for(int i=0;i<_prod->cnt && _mark[i]==1;i++){			\
-	pbodygetnextunit(_res[i],_origin[i],unit[i],unitlen[i]);	\
-      }									\
-      pbody *same;							\
-      createpbody(same);						\
-      int cmplen=0;							\
-      int cflag=1;							\
-      for(int i=0;i<_prod->cnt && _mark[i]==1 && cflag;i++){		\
-	for(int j=i+1;j<_prod->cnt && _mark[j]==1 && cflag;j++){	\
-	  if(listisempty(same->list)){					\
-	    int cmp=pbodyunitequal(unit[i],unitlen[i],unit[j],unitlen[j]); \
-	    if(cmp==1){							\
-	      pbodyappendlistwithlen(same,unit[i],unitlen[i]);		\
-	      cmplen=unitlen[i];					\
-	      cflag=0;							\
-	    }								\
-	  }								\
-	}								\
-      }									\
-      if(cflag==1)							\
-	flag=0;								\
-      else{								\
-	pbodyappendlistwithlen(_lcp,same,cmplen);			\
-	_len+=cmplen;							\
-	for(int i=0;i<_prod->cnt && _mark[i]==1;i++){			\
-	  int cmp=pbodyunitequal(same,cmplen,unit[i],unitlen[i]);	\
-	  if(cmp==0)							\
-	    _mark[i]=0;							\
-	  else								\
-	    _restlen[i]-=cmplen;					\
-	}								\
-      }									\
-    }									\
-    for(int i=0;i<_prod->cnt && _mark[i]==0;i++)			\
-      _res[i]=_origin[i];						\
-  }while(0)
 
 //====================left recursion
 #define prodhaveleftrecursion(prod,prodbody) ({	\

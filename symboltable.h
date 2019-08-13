@@ -99,7 +99,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   if(attr!=NULL)
     item->attr=attr;
   else
-    item->attr=createsymbolattr();
+    item->attr=createsymbolattr(item->id);
   st->table[hashvalue]=item;
   st->idarray[item->id]=hashvalue;
   st->count++;
@@ -164,38 +164,7 @@ void symboltablesetoption(symboltable *table,symboltableoption *option)
   memcpy(&(table->option),option,sizeof(symboltableoption));
 }
 
-//===========================================
-void prodinunit(symboltable *table);
-void disassembleor(symboltable *table);
-void elimateparenthese(symboltable *table);
-void elimateor(symboltable *table);
-void printtablepunit(symboltable *table);
-
-void prodinunit(symboltable *table)
-{
-  iterate_symbol_attr(table,_prodinunit);
-}
-/*
-void disassembleor(symboltable *table)
-{
-  iterate_symbol_attr(table,_disassembleor);
-}
-*/
-void printtablepunit(symboltable *table)
-{
-  iterate_symbol_attr(table,_printtablepunit);
-}
-
-void elimateparenthese(symboltable *table)
-{
-  iterate_symbol_attr(table,_elimateparenthese);
-}
-
-void elimateor(symboltable *table)
-{
-  iterate_symbol_attr(table,_elimateor);
-}
-//============================================
+//==========================================
 #define symbolderivename(newname,oriname,ulen)			\
   char *newname=(char*)malloc(strlen(oriname)+1+ulen);		\
   do{								\
@@ -212,6 +181,84 @@ int derivenewsymbol(symboltable *table,symbolitem *origin)
   symbolderivename(newname,origin->name,origin->derivecnt);
   return insertsymboltable(table,newname,NULL);
 }
+
+//===========================================
+void prodinunit(symboltable *table);
+void disassembleor(symboltable *table);
+void elimateparenthese(symboltable *table);
+void elimateor(symboltable *table);
+void extractleftlcp(symboltable *table);
+void printtablepunit(symboltable *table);
+
+void prodinunit(symboltable *table)
+{
+  iterate_symbol_attr(table,_prodinunit);
+}
+
+void printtablepunit(symboltable *table)
+{
+  iterate_symbol_attr(table,_printtablepunit);
+}
+
+void elimateparenthese(symboltable *table)
+{
+  iterate_symbol_attr(table,_elimateparenthese);
+}
+
+void elimateor(symboltable *table)
+{
+  iterate_symbol_attr(table,_elimateor);
+}
+
+void extractleftlcpone(symboltable *table,symbolitem *item)
+{
+  production *prod=item->attr->attr.prod;
+  int pt;
+  //the loop continue until there no other common prefix
+  while(1){
+    int size=prod->cnt;
+    int mark[size];
+    pbodyunit* unitarr[size];
+    productionbody *pbpos;
+    pt=0;
+    prod_for_each_prodbody(pbpos,prod)
+      unitarr[pt++]=pbpos->unit;
+    pbodyunit *lcphead;
+    int headindex;
+
+    if(pbodyunitfindlcp(unitarr,mark,size,&lcphead,&headindex)==0)
+      return ;
+    int newid=derivenewsymbol(table,item);
+    symbolitem *newitem=searchsymboltablebyid(table,newid);
+    production *newprod=newitem->attr->attr.prod;
+    pbodyunit *newunit=createpbodyunit();
+    newunit->type=P_NONTERMINAL;newunit->value.index=newid;
+    pbodyunit *lcp=pbodyunitcopy(lcphead,unitarr[headindex]);
+    //A-> alpha A` | beta
+    productionbody *originnewbody=createprodbodylinkprod(prod);
+    originnewbody->unit=lcp;
+    prodbodyappendpbodyunit(originnewbody,newunit);
+    pbpos=prod->productionbody;
+    productionbody *pbtmp=prodbodynext(pbpos);
+    for(pt=0;pt<size;pt++){
+      pbpos=pbtmp;
+      pbtmp=prodbodynext(pbtmp);
+      if(mark[pt]!=0){
+	productiondrop(prod,pbpos);
+      }
+    }
+  }
+}
+
+void extractleftlcp(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    extractleftlcpone(table,item);
+  }
+}
+//============================================
+
 /*
 //for one symbol
 //it rely on symbolsettype
