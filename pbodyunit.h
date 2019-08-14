@@ -9,6 +9,7 @@
 #define P_TERMINAL    2  //a terminal, like 'a', '|'
 #define P_COMBINE     3  //a group of symbol in a pair of parentheses, liks (ab)
 #define P_OR          4  // |
+#define P_EMPTY       5
 
 typedef struct pbodyunit pbodyunit;
 struct pbodyunit{
@@ -46,6 +47,7 @@ struct pbodyunit{
   listreplace(&(newhead->list),&(replacedpos->list))
 
 pbodyunit *createpbodyunit();
+pbodyunit *createpbodyunitempty();
 pbodyunit *_pbodyunitcopy(pbodyunit *u);
 pbodyunit *pbodyunitcopy(pbodyunit *list,pbodyunit *end);
 pbodyunit *getunitbypbody(pbody *head,pbody *end);
@@ -67,12 +69,21 @@ int _pbodyunitisequal(pbodyunit *u1,pbodyunit *u2);
 int pbodyunitisequal(pbodyunit *list1,pbodyunit *list2);
 int pbodyunitfindlcp(pbodyunit **unitarr,int mark[],int size,pbodyunit **head,int *headindex);
 
+int pbodyunitfindleftrecursion(pbodyunit **unitarr,int mark[],int size,int head);
+
 pbodyunit *createpbodyunit()
 {
   pbodyunit *ret=(pbodyunit*)malloc(sizeof(pbodyunit));
   list_init(ret->list);
   ret->value.index=0;
   ret->type=0;
+  return ret;
+}
+
+pbodyunit *createpbodyunitempty()
+{
+  pbodyunit *ret=createpbodyunit();
+  ret->type=P_EMPTY;
   return ret;
 }
 
@@ -87,15 +98,17 @@ pbodyunit *_pbodyunitcopy(pbodyunit *u)
   return ret;
 }
 
+//range:(list,end]
 pbodyunit *pbodyunitcopy(pbodyunit *list,pbodyunit *end)
 {
   pbodyunit *ret=createpbodyunit();
   pbodyunit *pos;
-  for_each_pbodyunit(pos,list){
-    if(list==end) break;
+  for(pbodyunit *pos=pbodyunitnext(list);;pos=pbodyunitnext(pos)){
     pbodyunit *copyright=_pbodyunitcopy(pos);
     pbodyunitappend(copyright,ret);
+    if(pos==end) break;
   }
+  return ret;
 }
 
 pbodyunit *getunitbypbody(pbody *head,pbody *end)
@@ -162,6 +175,7 @@ void printpbodyunittype(int type)
   case P_NONTERMINAL:{printf("NONTERMINAL\t");break;}
   case P_COMBINE:{printf("P_COMBINE\t");break;}
   case P_OR:{printf("OR\t");break;}
+  case P_EMPTY:{printf("EMPTY \t");break;}
   }
 }
 
@@ -226,18 +240,34 @@ void pcombineresolve(pbodyunit *pos)
 
 //test if a pcombine should be resolved and if true do pcombineresolve
 //in a recursion way <- now I can't complete it
-//true condition : ! ( hasalign && hasor )
+//false condition : nest has no less than two member 
+//               && is a operand of 'or'
 int _pbodyunitelimateparenthese(pbodyunit *pos)
 {
   int res=0;
-  int hasalign=pcombinehasalign(pos);
-  int hasor=pcombinehasor(pos);
-  if(!(hasalign && hasor)){
-    pcombineresolve(pos);
-    pbodyelimateparenthese(pos->body);	
-    res=1;      
+  int alignor=0;
+  int enoughmember=0;
+
+  int membercnt=0;
+  pbodyunit *nest=pos->value.nest;
+  pbodyunit *ppos;
+  for_each_pbodyunit(ppos,nest){
+    if(++membercnt == 2){
+      enoughmember=1;break;
+    }
   }
-  return res;
+  if(enoughmember==0) return 0;
+  
+  pbodyunit *next=pbodyunitnext(pos);
+  pbodyunit *prev=pbodyunitprev(pos);
+  if(next->type==P_OR || prev->type==P_OR)
+    alignor=1;
+  else 
+    return 0;
+  
+  pcombineresolve(pos);
+  //pbodyelimateparenthese(pos->body);	
+  return 1;
 }
 
 void pbodyunitelimateparenthese(pbodyunit *listhead)
@@ -339,9 +369,12 @@ int pbodyunitfindlcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,i
   }
     
   //step 4 : restore the list that don't fit the prefix
-  for(int i=0;i<size;i++)
+  for(int i=0;i<size;i++){
     if(mark[i]==0)
       unitarr[i]=origin[i];
+    else
+      unitarr[i]=pbodyunitprev(unitarr[i]); //keep the consisant
+  }
 
   if(lcpisempty==1) return 0;
   for(int i=0;i<size;i++)
@@ -353,4 +386,17 @@ int pbodyunitfindlcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,i
   return 0;
 }
 
+int pbodyunitfindleftrecursion(pbodyunit **unitarr,int mark[],int size,int head)
+{
+  int res=0;
+  bzero(mark,sizeof(int)*size);
+  for(int i=0;i<size;i++){
+    pbodyunit *tmp=pbodyunitnext(unitarr[i]);
+    if(tmp->type==P_NONTERMINAL && tmp->value.index==head){
+      mark[i]=1;
+      res=1;
+    }
+  }
+  return res;
+}
 #endif

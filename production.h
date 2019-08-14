@@ -69,6 +69,7 @@ productionbody *createprodbody();
 productionbody *createprodbodylinkprod(production *prod);
 production *createproduction(int head);
 productionbody *pbodyunitcreateprodbody(pbodyunit *u);
+void prodbodyappendpbodyunitlist(productionbody *prodbody,pbodyunit *start);
 void prodbodyappendpbodyunit(productionbody *prodbody,pbodyunit *u);
 
 productionbody *createprodbody()
@@ -105,10 +106,21 @@ productionbody *pbodyunitcreateprodbody(pbodyunit *u)
   return ret;
 }
 
+//range: (start,0)
+void prodbodyappendpbodyunitlist(productionbody *prodbody,pbodyunit *start)
+{
+  pbodyunit *listhead=prodbody->unit;
+  for(pbodyunit *pos=pbodyunitnext(start);pos->type!=0;pos=pbodyunitnext(pos)){
+    pbodyunit *copy=_pbodyunitcopy(pos);
+    pbodyunitappend(copy,listhead);
+  }
+}
+
 void prodbodyappendpbodyunit(productionbody *prodbody,pbodyunit *u)
 {
   pbodyunit *listhead=prodbody->unit;
-  pbodyunitappend(u,listhead);
+  pbodyunit *copy=_pbodyunitcopy(u);
+  pbodyunitappend(copy,listhead);
 }
 
 //=====================================

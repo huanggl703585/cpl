@@ -1,7 +1,7 @@
 #ifndef __RE_NODE_H
 #define __RE_NODE_H
 
-#include "re_seq.h"
+#include "re.h"
 
 typedef struct re_node re_node;
 struct re_node{
@@ -9,7 +9,9 @@ struct re_node{
     re_symbol *leave;
     re_operator *node;
   }key;
-  int index;
+  int type;
+  int value; //used to adjust dfa's output
+  int index; //index in the re_node tree
   int nullable;
   set* firstpos;
   set* lastpos;

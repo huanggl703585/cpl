@@ -93,16 +93,8 @@ int buildmetagrammar()
   appendprodrange(ppos,'a','z');
   appendprodrange(ppos,'A','Z');
 
-  prodinunit(table);
-  elimateparenthese(table);
-  elimateor(table);
-  extractleftlcp(table);
-  
+  reformproduction(table);
   printtablepunit(table);
-  //symbolsettype(table);
-  //printsymbolattr(table);
-  //elimateleftrecursion(table);
-  //symbolsettype(table);
   //printproductionwithname(table,0);
   //symbolsetmapper(table);
   //symboltoposort(table);

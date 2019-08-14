@@ -183,12 +183,26 @@ int derivenewsymbol(symboltable *table,symbolitem *origin)
 }
 
 //===========================================
+void reformproduction(symboltable *table);
+
 void prodinunit(symboltable *table);
 void disassembleor(symboltable *table);
 void elimateparenthese(symboltable *table);
 void elimateor(symboltable *table);
+void extractleftlcpone(symboltable *table,symbolitem *item);
 void extractleftlcp(symboltable *table);
+void elimateleftrecursionone(symboltable *table,symbolitem *item);
+void elimateleftrecursion(symboltable *table);
 void printtablepunit(symboltable *table);
+
+void reformproduction(symboltable *table)
+{
+  prodinunit(table);
+  elimateparenthese(table);
+  elimateor(table);
+  extractleftlcp(table);
+  elimateleftrecursion(table);
+}
 
 void prodinunit(symboltable *table)
 {
@@ -197,7 +211,12 @@ void prodinunit(symboltable *table)
 
 void printtablepunit(symboltable *table)
 {
-  iterate_symbol_attr(table,_printtablepunit);
+  //iterate_symbol_attr(table,_printtablepunit);  
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    printf("%s %d\n",item->name,item->id);
+    _printtablepunit(item->attr);
+  }
 }
 
 void elimateparenthese(symboltable *table)
@@ -228,22 +247,28 @@ void extractleftlcpone(symboltable *table,symbolitem *item)
 
     if(pbodyunitfindlcp(unitarr,mark,size,&lcphead,&headindex)==0)
       return ;
+  
     int newid=derivenewsymbol(table,item);
     symbolitem *newitem=searchsymboltablebyid(table,newid);
     production *newprod=newitem->attr->attr.prod;
     pbodyunit *newunit=createpbodyunit();
     newunit->type=P_NONTERMINAL;newunit->value.index=newid;
     pbodyunit *lcp=pbodyunitcopy(lcphead,unitarr[headindex]);
+    //printpbodyunit(lcp);
     //A-> alpha A` | beta
+    //add new to A
     productionbody *originnewbody=createprodbodylinkprod(prod);
     originnewbody->unit=lcp;
     prodbodyappendpbodyunit(originnewbody,newunit);
+    //delete A's prod, add prod to A`
     pbpos=prod->productionbody;
     productionbody *pbtmp=prodbodynext(pbpos);
     for(pt=0;pt<size;pt++){
       pbpos=pbtmp;
       pbtmp=prodbodynext(pbtmp);
       if(mark[pt]!=0){
+	productionbody *tmppb=createprodbodylinkprod(newprod);
+	prodbodyappendpbodyunitlist(tmppb,unitarr[pt]);
 	productiondrop(prod,pbpos);
       }
     }
@@ -257,65 +282,55 @@ void extractleftlcp(symboltable *table)
     extractleftlcpone(table,item);
   }
 }
-//============================================
 
-/*
-//for one symbol
-//it rely on symbolsettype
-void extractleftlcpone(symboltable *table,int id)
+void elimateleftrecursionone(symboltable *table,symbolitem *item)
 {
-  symbolitem *item=searchsymboltablebyid(table,id);
-  if(item->attr->type==TERMINALSET)
-   return ;
   production *prod=item->attr->attr.prod;
+  int head=prod->head;
   int pcnt=prod->cnt;
-  while(1){
-    prodfindlcp(prod,mark,res,lcp,len,restlen);
-    
-    if(listisempty(lcp->list)){ //no any lcp
-      break;
-    }
-    //we should promise that no empty symbol
-    int hasempty=0;
-    int newid=derivenewsymbol(table,item);
-    symbolitem *newitem=searchsymboltablebyid(table,newid);
-    newitem->attr->attr.prod=createproduction(newid);
-    production *newprod=newitem->attr->attr.prod;
-    productionbody *pbpos=prodbodynext(prod->productionbody);
-    for(int i=0;i<pcnt;i++){
-      productionbody *tmp=prodbodynext(pbpos);
-      if(mark[i]==1){
-	productiondrop(prod,pbpos);
-	//printslist(pbpos->body);
-	if(restlen[i]!=0){
-	  productionbody *pb=createprodbodywithpbody(res[i],restlen[i]);
-	  productionappend(newprod,pb);
-	  //TODO: CLEAN ORIGIN PB
-	}
-	else
-	  hasempty=1;
-      }
-      pbpos=tmp;
-    }
-    productionbody *lcppb=createprodbodywithpbody(lcp,len);
-    if(hasempty==1){
-      productionappend(prod,lcppb);
-    }
-    appendprodbody(lcppb,newid);
-    productionappend(prod,lcppb);
+  int mark[pcnt];
+  pbodyunit *unitarr[pcnt];
+  productionbody *pbpos;
+  int pt=0;
+  prod_for_each_prodbody(pbpos,prod){
+    pbodyunit *tmp=pbpos->unit;
+    unitarr[pt++]=tmp;
   }
+
+  if(!(pbodyunitfindleftrecursion(unitarr,mark,pcnt,head)))
+    return ;
+
+  int newid=derivenewsymbol(table,item);
+  symbolitem *newitem=searchsymboltablebyid(table,newid);
+  production *newprod=newitem->attr->attr.prod;
+  pbodyunit *newunit=createpbodyunit();
+  newunit->type=P_NONTERMINAL;newunit->value.index=newid;
+  pt=0;
+  prod_for_each_prodbody(pbpos,prod){
+    if(mark[pt]==0)
+      prodbodyappendpbodyunit(pbpos,newunit);
+    else{
+      productionbody *tmppb=createprodbodylinkprod(newprod);
+      pbodyunit *liststart=pbodyunitnext(unitarr[pt]);
+      prodbodyappendpbodyunitlist(tmppb,liststart);
+      prodbodyappendpbodyunit(tmppb,newunit);
+      
+      productiondrop(prod,pbpos);
+    }
+    pt++;
+  }
+  productionbody *emptyprod=createprodbodylinkprod(newprod);
+  pbodyunit *empty=createpbodyunitempty();
+  prodbodyappendpbodyunit(emptyprod,empty);
 }
 
-//UNTEST
-void extractleftlcp(symboltable *table)
+void elimateleftrecursion(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
-    int id=i+table->bias;
-    
-    extractleftlcpone(table,id);
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    elimateleftrecursionone(table,item);
   }
 }
-*/
 //===============================toposort
 void symboltoposort(symboltable *table);
 

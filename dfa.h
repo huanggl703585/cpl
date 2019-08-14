@@ -50,10 +50,10 @@ struct dfa_instance{
   dfainstancecopy(copyright,origin)
 
 //state's type is set*
-#define getstatesign(state,leavearr) ({			\
+#define getstatemark(state,leavearr) ({			\
       int key=state->key;				\
       re_node *node=leavearr[key];			\
-      node->key.leave->sign;})
+      node->mark;})
 
 dfa* createdfa(re_node *tree,int nodenum);
 
@@ -181,7 +181,7 @@ dfa* createdfa(re_node *tree,int nodenum)
   int alphacnt;
   travelavltree(alphaset,alphabet,256,alphacnt);
 
-  int signarray[256]={0};
+  int markarray[256]={0};
   
   int statecnt=0;
   int mark[256]={0};
@@ -225,8 +225,8 @@ dfa* createdfa(re_node *tree,int nodenum)
 	int hasequal=arrayfindequal(stateset,statecnt,tmpset,avltreecmp);
 	//printf("hasequal %d\n",hasequal);
 	if(hasequal==-1){ //add state
-	  if((signarray[statecnt]=getstatesign(tmpset,leave))==0)
-	    signarray[statecnt]=signarray[contine];
+	  if((markarray[statecnt]=getstatemark(tmpset,leave))==0)
+	    markarray[statecnt]=markarray[contine];
 	  mark[statecnt]=0;
 	  stateset[statecnt]=tmpset;
 	  hasequal=statecnt++;
@@ -252,7 +252,7 @@ dfa* createdfa(re_node *tree,int nodenum)
       //printf(" %d ",travelarr[j]);
       if(travelarr[j]==endposition){
 	//insertdarray(ret->end,(void*)(i+1));
-	endstateappend((ret->end),i+1,signarray[i]);
+	endstateappend((ret->end),i+1,markarray[i]);
       }
     }
     //printf("\n");
