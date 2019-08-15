@@ -71,6 +71,12 @@ int pbodyunitfindlcp(pbodyunit **unitarr,int mark[],int size,pbodyunit **head,in
 
 int pbodyunitfindleftrecursion(pbodyunit **unitarr,int mark[],int size,int head);
 
+int pbodyunitlisttype(pbodyunit *list); 
+
+#include "re_node.h"
+re_node *pbodyunitbuildrenode(pbodyunit *u);
+re_node *pbodyunitbuildretree(pbodyunit *list);
+
 pbodyunit *createpbodyunit()
 {
   pbodyunit *ret=(pbodyunit*)malloc(sizeof(pbodyunit));
@@ -395,6 +401,77 @@ int pbodyunitfindleftrecursion(pbodyunit **unitarr,int mark[],int size,int head)
     if(tmp->type==P_NONTERMINAL && tmp->value.index==head){
       mark[i]=1;
       res=1;
+    }
+  }
+  return res;
+}
+
+/*
+  return value:
+  1 : map to S_HAVEEMPTY
+  2 : that pbodyunit has a single terminal
+  3 : that pbodyunit has at least a nonterminal
+  4 : other-map to S_TERMINALSET
+*/
+int pbodyunitlisttype(pbodyunit *list)
+{
+  pbodyunit* first=pbodyunitnext(list);
+  pbodyunit* second=pbodyunitnext(first);
+
+  if(first->type==P_EMPTY && second->type==0) return 1;
+  if(first->type==P_TERMINAL && second->type==0) return 2;
+
+  pbodyunit *pos;
+  for_each_pbodyunit(pos,list){
+    if(pos->type==P_COMBINE){
+      pbodyunit *nest=pos->value.nest;
+      int res=pbodyunitlisttype(nest);
+      if(res==3) return 3;
+    }
+    else if(pos->type==P_NONTERMINAL)
+      return 3;
+  }
+  return 4;
+}
+
+re_node *pbodyunitbuildrenode(pbodyunit *u)
+{
+  re_node *res=NULL;
+  if(u->type==P_NONTERMINAL || u->type==P_TERMINAL || u->type==P_EMPTY)
+    res=createrenode(RE_OPERAND,u->value.index);
+  else if(u->type==P_OR)
+    res=createrenode(RE_OPERATOR,RE_OR);
+  else if(u->type==P_COMBINE)
+    res=pbodyunitbuildretree(u->value.nest);
+  return res;
+}
+
+re_node *pbodyunitbuildretree(pbodyunit *list)
+{
+  re_node *res;
+  re_node *leftnode=NULL,*rightnode=NULL;
+  re_node *operator=NULL;
+  pbodyunit *pos=pbodyunitnext(list);
+  leftnode=res=pbodyunitbuildrenode(pos);
+
+  while((pos=pbodyunitnext(pos))!=list){
+    re_node *newnode=pbodyunitbuildrenode(pos);
+    //there are only 'or' operator in pbodyunit
+    //so operator between pbodyunit is 'or' or 'cat'
+    if(newnode->type==RE_OPERATOR){
+      res=newnode;
+      pos=pbodyunitnext(pos);
+      rightnode=pbodyunitbuildrenode(pos);
+      newnode->left=leftnode;
+      newnode->right=rightnode;
+      leftnode=newnode;
+    }
+    else{
+      re_node *catnode=createrenode(RE_OPERATOR,RE_CAT);
+      res=catnode;
+      catnode->left=leftnode;
+      catnode->right=newnode;
+      leftnode=catnode;
     }
   }
   return res;

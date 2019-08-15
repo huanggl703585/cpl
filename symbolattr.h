@@ -5,14 +5,18 @@
 #include "graph.h"
 #include "production.h"
 #include "mapinput.h"
-#include "re_exp.h"
 
 #include <assert.h>
 
-#define NONTERMINAL  1
-#define TERMINALSET  2
-#define TERMINALSEQ  3
-#define TERMINAL     4
+//use 4 type to cover all nonterminal
+//first : terminal-set, means all production is like a :: 'b', both useful to symbol and terminal
+//sencond : other symbol that all its productions don't have any nonterminal
+//third : other symbol
+//forth : to the third kind of symbol that have empty production 
+#define S_TERMINALSET  1
+#define S_TERMINALSEQ  2
+#define S_NONTERMINAL  3
+#define S_HAVEEMPTY    4
 
 struct symbolattr;
 typedef struct symbolattr symbolattr;
@@ -24,7 +28,6 @@ struct symbolattr{
     charmapper *mapper;
   }attr;
   node *node;
-  re_exp *reexp;
   set *first;
   set *follow;
   darray *forecastlist;
@@ -39,37 +42,6 @@ symbolattr *createsymbolattr(int id)
   return ret;
 }
 
-/*
-  non-terminal set type
-  terminal set mapper
-*//*
-void symbolsetattr(symbolattr *attr);
-void _printsymbolattr(symbolattr *attr);
-
-void symbolsetattr(symbolattr *attr)
-{
-  production *prod=attr->attr.prod;
-  int isnt=prodhasnonterminal(prod);
-  if(isnt) 
-    attr->type=NONTERMINAL;
-  else if(prodisterminalset(prod))
-    attr->type=TERMINALSET;
-  else 
-    attr->type=TERMINALSEQ;
-}
-
-void _printsymbolattr(symbolattr *attr)
-{
-  int type=attr->type;
-  switch(type){
-  case TERMINAL: {printf("TERMINAL\n");break;}
-  case TERMINALSET: {printf("TERMINALSET\n");break;}
-  case TERMINALSEQ: {printf("TERMINALSEQ\n");break;}
-  case NONTERMINAL: {printf("NONTERMINAL\n");break;}
-  default:assert(0);
-  } 
-}
-  */
 //==============================
 void _prodinunit(symbolattr *attr);
 void _printtablepunit(symbolattr *attr);
@@ -108,4 +80,56 @@ void _elimateor(symbolattr *attr)
   prodelimateor(attr->attr.prod);
 }
 
+//========================symbol type
+void _symbolsettype(symbolattr *attr);
+void _printsymboltype(symbolattr *attr);
+
+void _symbolsettype(symbolattr *attr)
+{
+  production *prod=attr->attr.prod;
+  productionbody *pbpos;
+  int isterminalset=1;
+  prod_for_each_prodbody(pbpos,prod){
+    pbodyunit *list=pbpos->unit;
+    int res=pbodyunitlisttype(list);
+    if(isterminalset==1 && res!=2)
+      isterminalset=0;
+    if(res==1){
+      attr->type=S_HAVEEMPTY;
+      return ;
+    }
+    if(res==3){
+      attr->type=S_NONTERMINAL;
+      return ;
+    }
+  }
+  if(isterminalset==1)
+    attr->type=S_TERMINALSET;
+  else 
+    attr->type=S_TERMINALSEQ;
+}
+
+void _printsymboltype(symbolattr *attr)
+{
+  int type=attr->type;
+  switch(type){
+  case S_HAVEEMPTY: {printf("S_HAVEEMPTY\n");break;}
+  case S_TERMINALSET: {printf("S_TERMINALSET\n");break;}
+  case S_TERMINALSEQ: {printf("S_TERMINALSEQ\n");break;}
+  case S_NONTERMINAL: {printf("S_NONTERMINAL\n");break;}
+  default:assert(0);
+  } 
+}
+  
+//===================re_tree
+void _symboltablebuildretree(symbolattr *attr)
+{
+  production *prod=attr->attr.prod;
+  productionbody *pbpos;
+  prod_for_each_prodbody(pbpos,prod){
+    pbpos->retree=pbodyunitbuildretree(pbpos->unit);
+    printretree(pbpos->retree);
+    printf("\n");
+  }
+}
 #endif

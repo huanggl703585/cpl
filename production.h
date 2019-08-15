@@ -3,7 +3,6 @@
 
 #include "slist.h"
 #include "dynamicarray.h"
-#include "re_exp.h"
 #include "pbodyunit.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,6 +13,7 @@ struct productionbody{
   pbody *body;
   int cnt;
   pbodyunit *unit;
+  re_node *retree;
   struct list_head list;
 };
 

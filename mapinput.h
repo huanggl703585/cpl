@@ -19,13 +19,18 @@ typedef slist charmapper;
     appendslist(__tmp,listhead);				\
   }while(0)
 
-#define travelmapper(pos,listhead)		\
+#define for_each_charmapper(pos,listhead)		\
   list_for_each_entry(pos,&(listhead->list),list)
 
 charmapper *createcharmapper(int self)
 {
   initcharmapper(ret,NULL);
-  //charmapperappend(ret,self);
+  charmapperappend(ret,self);
   return ret;
+}
+
+void printcharmapper(charmapper *mapper)
+{
+  printslist(mapper);
 }
 #endif

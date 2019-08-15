@@ -1,7 +1,7 @@
 #ifndef __METAGRAMMAR_H
 #define __METAGRAMMAR_H
 
-#include "tokenizer.h"
+//#include "tokenizer.h"
 #include "production.h"
 #include "grammar.h"
 
@@ -94,12 +94,15 @@ int buildmetagrammar()
   appendprodrange(ppos,'A','Z');
 
   reformproduction(table);
-  printtablepunit(table);
-  //printproductionwithname(table,0);
-  //symbolsetmapper(table);
-  //symboltoposort(table);
-  //prodsettoreexp(table);
-  //TODO
+  //printtablepunit(table);
+ 
+  symbolsettype(table);
+  //printsymboltype(table);
+  symbolsetmapper(table);
+  //printsymbolmapper(table);
+  symboltoposort(table);
+  //printproductionwithname(table,1);
+  symboltablebuildretree(table);
   //printreexpset(table);
   //printproductionwithname(table,2);
   

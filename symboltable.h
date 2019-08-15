@@ -331,9 +331,91 @@ void elimateleftrecursion(symboltable *table)
     elimateleftrecursionone(table,item);
   }
 }
+
+//============================type,mapper
+//solve left recursion before
+void symbolsettype(symboltable *table);
+void printsymbolattr(symboltable *table);
+
+void symbolsetmapper(symboltable *table);
+void _symbolsetmapper(symboltable *table,production *prod);
+void printsymbolmapper(symboltable *table);
+
+#define havemapper(table,id)			\
+  (table->terminal[id]!=NULL)
+
+void symbolsettype(symboltable *table)
+{
+  iterate_symbol_attr(table,_symbolsettype);
+}
+
+void printsymboltype(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    printf("%s\t",item->name);
+    _printsymboltype(item->attr);
+  }
+}
+
+void symbolsetmapper(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    if(item->attr->type==S_TERMINALSET){
+      production *prod=item->attr->attr.prod;
+      _symbolsetmapper(table,prod);
+    }
+  }
+}
+
+void _symbolsetmapper(symboltable *table,production *prod)
+{
+  int mapto=prod->head;
+  productionbody *pbpos;
+  symbolitem *item;
+  charmapper *mapper=NULL;
+  prod_for_each_prodbody(pbpos,prod){
+    pbodyunit *u=pbpos->unit;
+    u=pbodyunitnext(u);
+    int value=u->value.index;
+    if(table->terminal[value]==NULL)
+      table->terminal[value]=createcharmapper(value);
+    charmapperappend(table->terminal[value],mapto);
+  }
+}
+
+void printsymbolmapper(symboltable *table)
+{
+  for(int i=0;i<table->bias;i++){
+    charmapper *mapper=table->terminal[i];
+    if(mapper!=NULL)
+      printcharmapper(table->terminal[i]);
+  }
+}
+
 //===============================toposort
+void pbodyunitaddedge(pbodyunit *list,node nodearr[],int *nodenum,int head,int bias);
 void symboltoposort(symboltable *table);
 
+void pbodyunitaddedge(pbodyunit *list,node nodearr[],int *nodenum,int head,int bias)
+{
+  pbodyunit *pos;
+  for_each_pbodyunit(pos,list){
+    if(pos->type==P_NONTERMINAL){
+      int key=pos->value.index;
+      if(key!=head){
+	int num=*nodenum;
+	arraynodeaddedge(nodearr,key-bias,head-bias,num);
+	*nodenum=num;
+      }
+    }
+    else if(pos->type==P_COMBINE){
+      pbodyunit *nest=pos->value.nest;
+      pbodyunitaddedge(nest,nodearr,nodenum,head,bias);
+    }
+  }
+}
 void symboltoposort(symboltable *table)
 {
   //mind the difference of domain of table index and node index
@@ -346,19 +428,14 @@ void symboltoposort(symboltable *table)
   
   for(int i=0;i<table->count;i++){
     symbolitem *item=searchsymboltablebyid(table,i+table->bias);
-    symbolattr *attr=item->attr;
-    production *prod=attr->attr.prod;
+    if(item->attr->type!=S_NONTERMINAL) continue;
+
+    production *prod=item->attr->attr.prod;
     int head=prod->head;
     productionbody *pbpos;
-    list_for_each_entry(pbpos,&(prod->productionbody->list),list){
-      pbody *pbody=pbpos->body;
-      slist *position;
-      list_for_each_entry(position,&(pbody->list),list){
-	int key=(int)(position->key);
-	if(key>=table->bias)
-	  if(key!=head)
-	    arraynodeaddedge(nodearr,key-table->bias,head-table->bias,nodenum);	
-      }
+    prod_for_each_prodbody(pbpos,prod){
+      pbodyunit *unitlist=pbpos->unit;
+      pbodyunitaddedge(unitlist,nodearr,&nodenum,head,table->bias);
     }
   }
   arraytopologysort(nodearr,table->count,table->toposort);
@@ -366,160 +443,19 @@ void symboltoposort(symboltable *table)
     table->toposort[i]+=table->bias;
 }
 
-//========================left recursion
-void elimateleftrecursion(symboltable *table);
-/*
-//it rely on extract left lcp
-void elimateleftrecursion(symboltable *table)
-{
-  for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
-    production *prod=item->attr->attr.prod;
-    productionbody *pbpos;
-    //because we have extracted left lcp, so just have one left-recursion production
-    list_for_each_entry(pbpos,&(prod->productionbody->list),list){
-      if(prodhaveleftrecursion(prod,pbpos)==1){
-	int newid=derivenewsymbol(table,item);
-	symbolitem *newitem=searchsymboltablebyid(table,newid);
-	newitem->attr->attr.prod=createproduction(newid);
-	production *newprod=newitem->attr->attr.prod;
-	pbody *head=getpbodynext(pbpos->body);
-	int newpblen=pbpos->cnt-1;
-	//printslist(head);
-	//printslist(pbpos->body);
-	//printf("newpblen %d ",newpblen);
-	//printpbodyunit(pbody,newpblen);
-	productionbody *newpb=createprodbodywithpbody(head,newpblen);
-	appendprodbody(newpb,newid);
-	productionappend(newprod,newpb);
-
-	productionbody *tmp=prodbodynext(prod->productionbody);
-	int pcnt=prod->cnt;
-	for(int i=0;i<pcnt;i++){ 
-	  if(tmp!=pbpos){
-	    productionbody *copypb=createprodbodywithpbody(tmp->body,tmp->cnt);
-	    productionappend(prod,copypb);
-	    appendprodbody(tmp,newid);
-	  }
-	  tmp=prodbodynext(tmp);
-	}
-	
-	productiondrop(prod,pbpos);
-      }
-    }
-  }
-}
-*/
-//============================type,mapper
-//solve left recursion before
-void symbolsettype(symboltable *table);
-void printsymbolattr(symboltable *table);
-
-void symbolsetmapper(symboltable *table);
-void _symbolsetmapper(symboltable *table,production *prod,int mapto);
-
-#define havemapper(table,id)			\
-  (table->terminal[id]!=NULL)
-/*
-void symbolsettype(symboltable *table)
-{
-  for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
-    symbolattr *attr=item->attr;
-    symbolsetattr(attr);
-  }
-}
-
-void printsymbolattr(symboltable *table)
-{
-  for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
-    _printsymbolattr(item->attr);
-  }
-}
-void symbolsetmapper(symboltable *table)
-{
-  for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
-    if(item->attr->type==TERMINALSET){
-      production *prod=item->attr->attr.prod;
-      _symbolsetmapper(table,prod,i+table->bias);
-    }
-  }
-}
-
-void _symbolsetmapper(symboltable *table,production *prod,int mapto)
-{
-  productionbody *pbpos;
-  symbolitem *item;
-  charmapper *mapper=NULL;
-  list_for_each_entry(pbpos,&(prod->productionbody->list),list){
-    pbody *body=getpbodynext((pbpos->body));
-    int id=getpbodykey(body);
-    if((table->terminal[id])==NULL){
-      table->terminal[id]=createcharmapper(id);
-    }
-    charmapperappend(table->terminal[id],mapto);
-  }
-}
-*/
 //========================re_exp
-//TODO : IT SHOULD MOVE TO GRAMMAR.H
-/*
-void prodsettoreexp(symboltable *table);
-void symbolreexptransit(symboltable *table,re_exp *re,int changesign);
-void printreexpset(symboltable *table); 
 
-#define CHANGESIGN   1
-#define UNCHANGESIGN 0
-void prodsettoreexp(symboltable *table)
+void symboltablebuildretree(symboltable *table);
+
+void symboltablebuildretree(symboltable *table)
 {
+  //iterate_symbol_attr(table,_symboltablebuildretree);
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
-    symbolattr *attr=item->attr;
-    if(attr->type==TERMINALSEQ || attr->type==NONTERMINAL){
-      re_exp *re=productiontoreexp(attr->attr.prod,table->toposort[i]);
-      //printreexp(re);
-      if(attr->type==NONTERMINAL){
-	if(table->toposort[i]==127)
-	  symbolreexptransit(table,re,CHANGESIGN);
-	else
-	  symbolreexptransit(table,re,UNCHANGESIGN);
-      }
-      attr->reexp=re;
-    }
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    _symboltablebuildretree(item->attr);
   }
 }
 
-void symbolreexptransit(symboltable *table,re_exp *re,int changesign)
-{
-  re_exp *pos;
-  list_for_each_entry(pos,&(re->list),list){
-    if(pos->type==OPERAND){
-      int id=pos->id;
-      symbolitem *item=searchsymboltablebyid(table,id);
-      if(item->attr->type==NONTERMINAL || item->attr->type==TERMINALSEQ){
-	re_exp *replace=item->attr->reexp;
-	if(changesign==CHANGESIGN){
-	  reexpreplacesignunchange(pos,replace);
-	}
-	else
-	  reexpreplace(pos,replace);
-      }
-    }
-  }
-}
-
-//TODO
-void printreexpset(symboltable *table)
-{
-  for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
-    if(item->attr->type==NONTERMINAL || item->attr->type==TERMINALSEQ)
-      printreexp(item->attr->reexp);
-  }
-}
-*/
 //========================print/test
 //option==0 print in id order
 //option==1 print in toposort order
@@ -540,27 +476,9 @@ void printproductionwithname(symboltable *table,int option)
     item=searchsymboltablebyid(table,head);
     printf("head %s cnt %d\n",item->name,prod->cnt);
     productionbody *pbpos;
-    list_for_each_entry(pbpos,&(prod->productionbody->list),list){
+    prod_for_each_prodbody(pbpos,prod){
       printf("cnt %d\n",pbpos->cnt);
-      pbody *body=pbpos->body;
-      pbody *position;
-      printf("  ");
-      pbody_for_each(position,(pbpos->body)){
-	int key=(int)(position->key);
-	if(key=='\''){
-	  pbody *pbodytmp=getpbodynext(position);
-	  int tmpkey=getpbodykey(pbodytmp);
-	  printf("%c ",(char)tmpkey);
-	  position=(getpbodynext(pbodytmp));
-	}
-	else if(key<table->bias)
-	  printf("%c ",(char)key);
-	else{
-	  item=searchsymboltablebyid(table,key);
-	  printf("%s ",item->name);
-	}
-      }
-      printf("\n");
+      _printpbodyunit(pbpos->unit);
     }
     printf("\n");
   }

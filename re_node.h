@@ -1,16 +1,25 @@
 #ifndef __RE_NODE_H
 #define __RE_NODE_H
 
-#include "re.h"
+#include "set.h"
+
+#include <limits.h>
+
+#define RE_END_SYMBOL INT_MAX
+
+#define RE_OPERATOR  1
+#define RE_OPERAND   2
+
+//for operator
+#define RE_CAT  1
+#define RE_OR   2
+#define RE_STAR 3
 
 typedef struct re_node re_node;
 struct re_node{
-  union{
-    re_symbol *leave;
-    re_operator *node;
-  }key;
   int type;
-  int value; //used to adjust dfa's output
+  int value; 
+  int mark;//used to adjust dfa's output
   int index; //index in the re_node tree
   int nullable;
   set* firstpos;
@@ -23,114 +32,65 @@ struct re_node{
 #define isnode(node) (node->left!=NULL || node->right!=NULL)
 #define isleave(node) (node->left==NULL && node->right==NULL)
 
-re_node* createrenode(int isleave,void *key);
-re_node* reseqtotree(re_seq *seq);
-re_node* buildtree(re_seq *seq);
-re_node* _buildtree(re_iterator *iter,int *index);
+re_node* createrenode(int type,int value);
 
-#define ISLEAVE 1
-#define ISNODE  0
-re_node *createrenode(int isleave,void *key)
+re_node *createrenode(int type,int value)
 {
   re_node *ret=(re_node*)malloc(sizeof(re_node));
   ret->left=ret->right=ret->parent=NULL;
-  if(isleave)
-    ret->key.leave=(re_symbol*)key;
-  else
-    ret->key.node=(re_operator*)key;
   ret->firstpos=ret->lastpos=NULL;
+  ret->type=type;
+  ret->value=value;
+
   return ret;
 }
 
-re_node *getchild(re_iterator *iter,int *index)
-{
-  re_operator *operator=iter->operator;
-  if(operator->operator==LEFTPARTH){
-    operator=getnextoperator(iter);
-    return _buildtree(iter,index);
-  }
-  else{
-    re_symbol *operand=getnextoperands(iter);
-    re_node *ret=createrenode(1,operand);
-    ret->index=(*index)++;
-    return ret;
-  }
-}
-
-re_node* buildtree(re_seq *seq)
-{
-  expandreseq(seq);
-  re_iterator iter;
-  initreiterator(iter,seq);
-  int index=1;
-  return _buildtree(&iter,&index);
-}
-void travelretree(re_node *tree);
-
-//TODO:
-//TEST IT!
-re_node* _buildtree(re_iterator *iter,int *index)
-{
-  re_node *ret=NULL;
-  re_operator *curoperator;
-  re_node *rightnode,*lastnode;
-
-  ret=getchild(iter,index);
-  lastnode=ret;
-
-  while((curoperator=getnextoperator(iter))!=NULL){
-    if(curoperator->operator==RIGHTPARTH)
-      return ret;
-    if(curoperator->operator==STAR){
-      re_node *new=createrenode(0,curoperator);
-      new->left=lastnode;
-      if(lastnode->parent==NULL){
-	lastnode=new;
-	ret=new;
-      }
-      else {
-	lastnode->parent->right=new;
-	//lastnode unchange, it should consider duplicate star?
-      }
-      lastnode->parent=new;
-    }
-    else{ // CAT AND OR
-      rightnode=getchild(iter,index);
-      re_node *new = createrenode(ISLEAVE,curoperator);
-      new->left=ret;
-      new->right=rightnode;
-      ret->parent=new;
-      rightnode->parent=new;
-      ret=new;
-      lastnode=rightnode;
-    }
-  }
-  return ret;
-}
 //=========================test/print
-void travelretree(re_node *tree);
+void printrenodetype(int type);
+void printrenodeoperator(int operator);
 void printrenode(re_node *node);
+
+void printretree(re_node *tree);
+
+void printrenodetype(int type)
+{
+  switch(type){
+  case RE_OPERATOR:{printf("RE_OPERATOR\t");break;}
+  case RE_OPERAND:{printf("RE_OPERAND\t");break;}
+  }
+}
+
+void printrenodeoperator(int operator)
+{
+  switch(operator){
+  case RE_CAT:{printf("RE_CAT");break;}
+  case RE_STAR:{printf("RE_STAR");break;}
+  case RE_OR:{printf("RE_OR");break;}
+  }
+}
 
 void printrenode(re_node *node)
 {
-  if(isleave(node))
-    printf("%d ",node->key.leave->index);
+  printrenodetype(node->type);
+  if(node->type==RE_OPERAND)
+    printf("%d",node->value);
   else
-    printf("%d ",node->key.node->operator);
+    printrenodeoperator(node->value);
+  printf("\n");
 }
 
 //prev order traversal
-void travelretree(re_node *tree)
+void printretree(re_node *tree)
 {
   if(isnode(tree)){
-    printf("%d \n",tree->key.node->operator);
+    printrenode(tree);
     if(tree->left!=NULL)
-      travelretree(tree->left);
+      printretree(tree->left);
     if(tree->right!=NULL)
-      travelretree(tree->right);
+      printretree(tree->right);
   }
   else
-    printf("%d \n",tree->key.leave->index);
+    printrenode(tree);
 }
 
 #endif
