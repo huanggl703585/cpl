@@ -449,11 +449,7 @@ void symboltablebuildretree(symboltable *table);
 
 void symboltablebuildretree(symboltable *table)
 {
-  //iterate_symbol_attr(table,_symboltablebuildretree);
-  for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
-    _symboltablebuildretree(item->attr);
-  }
+  iterate_symbol_attr(table,_symboltablebuildretree);
 }
 
 //========================print/test

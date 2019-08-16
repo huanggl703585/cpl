@@ -103,17 +103,6 @@ int buildmetagrammar()
   symboltoposort(table);
   //printproductionwithname(table,1);
   symboltablebuildretree(table);
-  //printreexpset(table);
-  //printproductionwithname(table,2);
-  
-  //int id=table->toposort[table->count-1];
-  //symbolitem *tokenitem=searchsymboltablebyid(table,id);
-  //re_seq *seq=reexptoreseq(tokenitem->attr->reexp);
-  //re_node *tree=buildtree(seq);
-  //travelretree(tree);
-  //int nodenum=reseqgetnodenum(seq);
-  //printf("nodenum %d ",nodenum);
-  //printreseq(seq);
   //dfa *dfa=createdfa(tree,nodenum);
 
   //tokenizer *tokenizer=createtokenizer(path,1024,1024);

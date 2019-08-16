@@ -125,11 +125,6 @@ void _printsymboltype(symbolattr *attr)
 void _symboltablebuildretree(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
-  productionbody *pbpos;
-  prod_for_each_prodbody(pbpos,prod){
-    pbpos->retree=pbodyunitbuildretree(pbpos->unit);
-    printretree(pbpos->retree);
-    printf("\n");
-  }
+  prodbuildretree(prod);
 }
 #endif

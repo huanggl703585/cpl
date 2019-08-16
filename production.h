@@ -46,6 +46,7 @@ typedef struct production production;
 struct production{
   int head;
   int cnt;
+  re_node *retree;
   productionbody *productionbody;
 };
 
@@ -174,105 +175,49 @@ void prodelimateor(production *prod)
       _doprodelimateor(prod,pbpos);
   }
 }
-/*
-//================================
 
-#define ispunctuate(x)				\
-  (x=='(' || x==')' || x=='|')
+//====================re_node
+void prodbuildretree(production *prod);
+void prodbodybuildretree(productionbody *prodbody);
 
-re_exp *productiontoreexp(production *prod,int head);
-re_exp *_productiontoreexp(productionbody *prodbody,int head);
-
-re_exp *productiontoreexp(production *prod,int head)
+void prodbuildretree(production *prod)
 {
-  if(prod->cnt==1){  //don't need parentheses
-    productionbody *pbpos=productionbodyfirst(prod->productionbody);
-    return _productiontoreexp(pbpos,head);
-  }
-  else{
-    re_exp *ret=createreexp();
-    int cnt=0;
-    productionbody *pbpos;
-    list_for_each_entry(pbpos,&(prod->productionbody->list),list){
-      re_exp *tmp=_productiontoreexp(pbpos,head);
-      reexpaddparentheses(tmp);
-      listappend(&(ret->list),&(tmp->list));
-      free(tmp);
-      if(++cnt != prod->cnt){
-	re_exp *tmpor=createreexp();
-	tmpor->type=OPERATOR;
-	tmpor->id=OR;
-	listaddtail(&(tmpor->list),&(ret->list));
-      }
-    }
-    return ret;
-  }
-}
-
-re_exp *_productiontoreexp(productionbody *prodbody,int head)
-{
-  re_exp *ret=createreexp();
-  pbody *pos;
-  int isfirst=1;
-  list_for_each_entry(pos,&(prodbody->body->list),list){
-    int key=(int)(pos->key);
-    if(ispunctuate(key))
-      reexpappendoperator(ret,key);
-    else{
-      if(key!=head){
-	if(isfirst) isfirst=0;
-	else reexpappendoperator(ret,CAT);
-	reexpappendoperand(ret,key,head);
-      }
-      else{
-	reexpaddparentheses(ret);
-	reexpappendoperator(ret,STAR);
-      }
-    }
-  }
-  return ret;
-}
-
-//====================
-int prodhasnonterminal(production *prod);
-int prodisterminalset(production *prod);
-
-int prodhasnonterminal(production *prod)
-{
+  int head=prod->head;
+  int size=prod->cnt;
+  re_node *retreearr[size];
+  int pt=0;
   productionbody *pbpos;
-  list_for_each_entry(pbpos,&(prod->productionbody->list),list){
-    pbody *tmp;
-    list_for_each_entry(tmp,&(pbpos->body->list),list){
-      int key=(int)(tmp->key);
-      if(key>=127)
-	return 1;
-    }
+  prod_for_each_prodbody(pbpos,prod){
+    prodbodybuildretree(pbpos);
+    retreearr[pt++]=pbpos->retree;
   }
-  return 0;
+  
+  int haverecursion[size];
+  int recursionnum;
+  if((recursionnum=retreetestrecursion(retreearr,head,haverecursion,size))){
+    re_node *norecursion[size-recursionnum];
+    int tmppt=0;
+    for(int i=0;i<size;i++)
+      if(haverecursion[i]==0)
+	norecursion[tmppt++]=retreearr[i];
+    re_node *righttree=concatenateretree(norecursion,tmppt,RE_CAT);
+    for(int i=0;i<size;i++)
+      if(haverecursion[i]==1)
+	retreereducerecursion(retreearr[i],head,righttree);
+  }
+  
+  prod->retree=concatenateretree(retreearr,size,RE_OR);
+  printretree(prod->retree);
+  printf("\n");
 }
 
-int prodisterminalset(production *prod)
+void prodbodybuildretree(productionbody *prodbody)
 {
-  productionbody *pbpos;
-  list_for_each_entry(pbpos,&(prod->productionbody->list),list){
-    pbody *tmp;
-    //just has single member, and the member is a terminal
-    int cnt=0;
-    list_for_each_entry(tmp,&(pbpos->body->list),list){
-      if((cnt++)==1) return 0;
-    }
-  }
-  return 1;
+  prodbody->retree=pbodyunitbuildretree(prodbody->unit);
+  //printretree(prodbody->retree);
+  //printf("\n");
 }
 
-//====================left recursion
-#define prodhaveleftrecursion(prod,prodbody) ({	\
-  int __head=prod->head;			\
-  pbody *__pos=prodbodyfirstelem(prodbody);	\
-  int __elem=(int)(__pos->key);			\
-  int __res=(__elem==__head);			\
-  __res;})
-*/
 //====================print/test
 void printproduction(production *prod);
 

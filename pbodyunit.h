@@ -446,6 +446,7 @@ re_node *pbodyunitbuildrenode(pbodyunit *u)
   return res;
 }
 
+//don't consider the condition that have recursion
 re_node *pbodyunitbuildretree(pbodyunit *list)
 {
   re_node *res;

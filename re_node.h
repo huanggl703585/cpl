@@ -19,6 +19,7 @@ typedef struct re_node re_node;
 struct re_node{
   int type;
   int value; 
+  int nodenum;//number of re_node of the tree
   int mark;//used to adjust dfa's output
   int index; //index in the re_node tree
   int nullable;
@@ -29,10 +30,19 @@ struct re_node{
   struct re_node *parent;
 };
 
+#define isleft  1
+#define isright 2
+
 #define isnode(node) (node->left!=NULL || node->right!=NULL)
 #define isleave(node) (node->left==NULL && node->right==NULL)
 
 re_node* createrenode(int type,int value);
+int retreefind(re_node *root,int value);
+re_node *concatenateretree(re_node **rootarr,int size,int way);
+void retreereplace(re_node *parent,int isleftchild,re_node *newtree);
+
+int retreetestrecursion(re_node **rootarr,int head,int mark[],int size);
+re_node* retreereducerecursion(re_node *root,int head,re_node *newright);
 
 re_node *createrenode(int type,int value)
 {
@@ -41,8 +51,73 @@ re_node *createrenode(int type,int value)
   ret->firstpos=ret->lastpos=NULL;
   ret->type=type;
   ret->value=value;
+  ret->nodenum=1;
 
   return ret;
+}
+
+int retreefind(re_node *root,int value)
+{
+  if(root->type==RE_OPERAND && root->value==value)
+    return 1;
+  if(root->left!=NULL && root->right!=NULL)
+    return (retreefind(root->left,value) || retreefind(root->right,value));
+  else if(root->left!=NULL)
+    return retreefind(root->left,value);
+  return 0;
+}
+
+re_node *concatenateretree(re_node **rootarr,int size,int way)
+{
+  re_node *ret=rootarr[0];
+  re_node *lefttree=ret;
+  for(int i=1;i<size;i++){
+    re_node *catnode=createrenode(RE_OPERATOR,way);
+    catnode->left=lefttree;
+    catnode->right=rootarr[i];
+    catnode->nodenum+=(lefttree->nodenum+rootarr[i]->nodenum);
+    lefttree=catnode;
+    ret=catnode;
+  }
+  return ret;
+}
+
+void retreereplace(re_node *parent,int isleftchild,re_node *newtree)
+{
+  if(isleftchild==isleft)
+    parent->left=newtree;
+  else
+    parent->right=newtree;
+}
+
+int retreetestrecursion(re_node **rootarr,int head,int mark[],int size)
+{
+  int ret=0;
+  for(int i=0;i<size;i++){
+    int tmp=retreefind(rootarr[i],head);
+    if(tmp!=0) ret++;
+    mark[i]=tmp;
+  }
+  return ret;
+}
+
+//just reduce one recursion symbol
+re_node* retreereducerecursion(re_node *root,int head,re_node *newright)
+{
+  re_node *ret=root;
+  if(root->right->type==RE_OPERAND && root->right->value==head){
+    re_node *addstar=createrenode(RE_OPERATOR,RE_STAR);
+    addstar->left=root->left;
+    root->left=addstar;
+    root->right=newright;
+    root->nodenum++;
+    return ret;
+  }
+  if(root->right->type==RE_OPERATOR)
+    return retreereducerecursion(root->right,head,newright);
+  if(root->left->type==RE_OPERATOR)
+    return retreereducerecursion(root->left,head,newright);
+  return NULL;
 }
 
 //=========================test/print
