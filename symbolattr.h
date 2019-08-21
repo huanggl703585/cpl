@@ -1,6 +1,7 @@
 #ifndef __SYMBOLATTR_H
 #define __SYMBOLATTR_H
 
+#include "dfa.h"
 #include "set.h"
 #include "graph.h"
 #include "production.h"
@@ -27,7 +28,8 @@ struct symbolattr{
     production *prod;
     charmapper *mapper;
   }attr;
-  node *node;
+  dfa *dfa;
+  //node *node;
   set *first;
   set *follow;
   darray *forecastlist;
@@ -122,9 +124,15 @@ void _printsymboltype(symbolattr *attr)
 }
   
 //===================re_tree
+void _symboltablebuildretree(symbolattr *attr);
+
 void _symboltablebuildretree(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
-  prodbuildretree(prod);
+  if(attr->type!=S_TERMINALSET)
+    prodbuildretree(prod);
+  else
+    prod->retree=createrenode(RE_OPERAND,prod->head);
 }
+
 #endif

@@ -445,11 +445,124 @@ void symboltoposort(symboltable *table)
 
 //========================re_exp
 
-void symboltablebuildretree(symboltable *table);
+//return a expanded retree
+re_node* symboltablebuildretree(symboltable *table,int start);
+//combine until start symbol, because we need to mark other symbol
+void symboltableretreecombine(symboltable *table,int start);
+void dosymboltableretreecombine(symboltable *table,re_node *root);
+void symboltableretreecopycombine(symboltable *table,re_node *root);
+void symboltableretreesetmark(symboltable *table,int start);
+void symboltableprintretree(symboltable *table);
 
-void symboltablebuildretree(symboltable *table)
+re_node* symboltablebuildretree(symboltable *table,int start)
 {
   iterate_symbol_attr(table,_symboltablebuildretree);
+  symboltableretreecombine(table,start);
+  symboltableretreesetmark(table,start);
+  
+  symbolitem *startitem=searchsymboltablebyid(table,start);
+  re_node *starttree=startitem->attr->attr.prod->retree;
+  symboltableretreecopycombine(table,starttree);
+  re_node *ret=retreeexpand(starttree,0);
+  retreecount(ret);
+  return ret;
+}
+
+//combine every symbol's retree except start symbol
+//for example, if production is token ::= identifier | equivalence
+//then the retree of identifier and equivalence is combined by reference
+//the retree of start symbol should be combined by copy
+void symboltableretreecombine(symboltable *table,int start)
+{
+  for(int i=0;i<table->count;i++){
+    if(table->toposort[i]==start) continue;
+    symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
+    if(item->attr->type==S_TERMINALSET) continue;
+
+    dosymboltableretreecombine(table,item->attr->attr.prod->retree);
+  }
+}
+
+void dosymboltableretreecombine(symboltable *table,re_node *root)
+{
+  re_node *left=root->left,*right=root->right;
+  if(left!=NULL && left->type==RE_OPERAND && left->value>table->bias){
+    symbolitem *newitem=searchsymboltablebyid(table,left->value);
+    re_node *newtree=newitem->attr->attr.prod->retree;
+    retreereplace(root,isleft,newtree);
+  }
+  if(right !=NULL && right->type==RE_OPERAND && right->value>table->bias){
+    symbolitem *newitem=searchsymboltablebyid(table,right->value);
+    re_node *newtree=newitem->attr->attr.prod->retree;
+    retreereplace(root,isright,newtree);
+  }
+  if(left!=NULL && left->type==RE_OPERATOR)
+    dosymboltableretreecombine(table,left);
+  if(right!=NULL && right->type==RE_OPERATOR)
+    dosymboltableretreecombine(table,right);
+}
+
+//special for start symbol
+void symboltableretreecopycombine(symboltable *table,re_node *root)
+{
+  re_node *left=root->left,*right=root->right;
+  re_node *newtree;
+  if(left!=NULL && left->type==RE_OPERAND){
+    if(left->value>table->bias){
+      symbolitem *newitem=searchsymboltablebyid(table,left->value);
+      newtree=retreecopy(newitem->attr->attr.prod->retree);
+    }
+    else
+      newtree=renodecopy(left);
+    newtree=retreeexpand(newtree,newtree->mark);
+    retreereplace(root,isleft,newtree);
+  }
+  if(right !=NULL && right->type==RE_OPERAND){
+    if(right->value>table->bias){
+      symbolitem *newitem=searchsymboltablebyid(table,right->value);
+      newtree=retreecopy(newitem->attr->attr.prod->retree);
+    }
+    else
+      newtree=renodecopy(right);
+    newtree=retreeexpand(newtree,newtree->mark);
+    retreereplace(root,isright,newtree);
+  }
+  if(left!=NULL && left->type==RE_OPERATOR)
+    symboltableretreecopycombine(table,left);
+  if(right!=NULL && right->type==RE_OPERATOR)
+    symboltableretreecopycombine(table,right);
+}
+
+void symboltableretreesetmark(symboltable *table,int start)
+{
+  symbolitem *item=searchsymboltablebyid(table,start);
+  re_node *root=item->attr->attr.prod->retree;
+  re_node *stack[1024];
+  int pt=0;
+  stack[pt++]=root;
+  while(--pt>=0){
+    re_node *curnode=stack[pt];
+    if(curnode->type==RE_OPERAND){
+      if(curnode->value>table->bias){
+	symbolitem *curitem=searchsymboltablebyid(table,curnode->value);
+	retreesetmark(curitem->attr->attr.prod->retree,curnode->value);
+      }
+      else
+	curnode->mark=curnode->value;
+    }
+    if(curnode->left!=NULL) stack[pt++]=curnode->left;
+    if(curnode->right!=NULL) stack[pt++]=curnode->right;
+  }
+}
+
+void symboltableprintretree(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    if(item->attr->type==S_TERMINALSET) continue;
+
+    printretree(item->attr->attr.prod->retree);
+  }
 }
 
 //========================print/test

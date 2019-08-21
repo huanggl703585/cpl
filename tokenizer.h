@@ -59,7 +59,7 @@ token* gettoken(tokenizer *worker)
     else{
       charmapper *pos,*head=worker->gtable->terminal[c];
       int success=0;
-      travelmapper(pos,head){
+      for_each_charmapper(pos,head){
 	int input=(int)(pos->key);
 	dfa_instance copyright;
 	dfainstancecopy(worker->dfa,(&copyright));
@@ -114,7 +114,7 @@ void _dotokenizer(tokenizer *worker)
     else{
       charmapper *pos,*head=worker->gtable->terminal[c];
       int success=0;
-      travelmapper(pos,head){
+      for_each_charmapper(pos,head){
 	int input=(int)(pos->key);
 	dfa_instance copyright;
 	dfainstancecopy(worker->dfa,(&copyright));

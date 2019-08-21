@@ -207,8 +207,8 @@ void prodbuildretree(production *prod)
   }
   
   prod->retree=concatenateretree(retreearr,size,RE_OR);
-  printretree(prod->retree);
-  printf("\n");
+  //printretree(prod->retree);
+  //printf("\n");
 }
 
 void prodbodybuildretree(productionbody *prodbody)

@@ -1,7 +1,7 @@
 #ifndef __METAGRAMMAR_H
 #define __METAGRAMMAR_H
 
-//#include "tokenizer.h"
+#include "tokenizer.h"
 #include "production.h"
 #include "grammar.h"
 
@@ -102,9 +102,10 @@ int buildmetagrammar()
   //printsymbolmapper(table);
   symboltoposort(table);
   //printproductionwithname(table,1);
-  symboltablebuildretree(table);
-  //dfa *dfa=createdfa(tree,nodenum);
-
+  re_node *tree=symboltablebuildretree(table,table->bias);
+  //printretree(tree);
+  dfa *dfa=createdfa(tree,tree->nodenum);
+  printdfa(dfa);
   //tokenizer *tokenizer=createtokenizer(path,1024,1024);
   //tokenizer->gtable=table;
   //tokenizer->dfa=createdfainstance(dfa);

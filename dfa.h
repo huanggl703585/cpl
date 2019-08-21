@@ -74,11 +74,6 @@ dfa* createdfa(re_node *tree,int nodenum)
   //TODO: THAT NODEARR'S LENGTH SHOULD REPLACED BY A MACRO
   re_node *nodearr[256];  
   int nodecnt=post_order_travel(tree,nodearr,256,left,right);
- 
-  /*printf("\n%d \n",nodenum);
-  for(int i=0;i<nodenum;i++){
-    printrenode(nodearr[i]);
-    }*/
   
   //index record the leave, cooperate with nodecnt
   re_node *leave[nodecnt];
@@ -87,14 +82,14 @@ dfa* createdfa(re_node *tree,int nodenum)
   //compute nullable, firstpos, lastpos
   for(int i=0;i<nodenum;i++){
     if(isleave(nodearr[i])){
-      insertset(alphaset,nodearr[i]->key.leave->index);
+      insertset(alphaset,nodearr[i]->value);
       nodearr[i]->index=leavecnt;
       leave[leavecnt++]=nodearr[i];
 
-      if(nodearr[i]->key.leave->index==0)
+      if(nodearr[i]->value==RE_END_SYMBOL)
 	endposition=nodearr[i]->index;
    
-      if(nodearr[i]->key.leave->index==RE_EMPTY_SYMBOL)
+      if(nodearr[i]->value==0)
 	nodearr[i]->nullable=1;
       else{
 	insertset(nodearr[i]->firstpos,nodearr[i]->index);
@@ -102,14 +97,14 @@ dfa* createdfa(re_node *tree,int nodenum)
       }
     }
     else{
-      if(nodearr[i]->key.node->operator==OR){
+      if(nodearr[i]->value==RE_OR){
 	nodearr[i]->nullable=(nodearr[i]->left->nullable || nodearr[i]->right->nullable);
 	intersectset(&(nodearr[i]->firstpos),nodearr[i]->left->firstpos);
 	intersectset(&(nodearr[i]->firstpos),nodearr[i]->right->firstpos);
 	intersectset(&(nodearr[i]->lastpos),nodearr[i]->left->lastpos);
 	intersectset(&(nodearr[i]->lastpos),nodearr[i]->right->lastpos);
       }
-      else if(nodearr[i]->key.node->operator==CAT){
+      else if(nodearr[i]->value==RE_CAT){
 	nodearr[i]->nullable=(nodearr[i]->left->nullable && nodearr[i]->right->nullable);
 	if(nodearr[i]->left->nullable==1){
 	  intersectset(&(nodearr[i]->firstpos),nodearr[i]->left->firstpos);
@@ -139,26 +134,33 @@ dfa* createdfa(re_node *tree,int nodenum)
     followpos[i]=NULL;
   for(int i=0;i<nodecnt;i++){
     if(isnode(nodearr[i])){
-      if(nodearr[i]->key.node->operator==CAT){
+      if(nodearr[i]->value==RE_CAT){
 	re_node *right=nodearr[i]->right;
 	re_node *left=nodearr[i]->left;
 	
-	int arr[nodecnt];
+	int arr[leavecnt];
 	int num;
-	travelavltree(left->lastpos,arr,nodecnt,num);
-	for(int i=0;i<num;i++)
+	travelavltree(left->lastpos,arr,leavecnt,num);
+	//avltreeprint(right->firstpos);
+	for(int i=0;i<num;i++){
+	  //printf("index %d\n",arr[i]);
 	  intersectset(&(followpos[arr[i]]),right->firstpos);
+	}
       }
-      else if(nodearr[i]->key.node->operator==STAR){
-	int arr[nodecnt];
+      else if(nodearr[i]->value==RE_STAR){
+	int arr[leavecnt];
 	int num;
 	re_node *cur=nodearr[i];
-	travelavltree(cur->firstpos,arr,nodecnt,num);
-	for(int i=0;i<num;i++)
+	travelavltree(cur->firstpos,arr,leavecnt,num);
+	//avltreeprint(cur->firstpos);
+	for(int i=0;i<num;i++){
+	  //printf("index %d\n",arr[i]);
 	  intersectset(&(followpos[arr[i]]),cur->firstpos);
+	}
       }
     }
   }
+
   /*
   printf("print\n");
   for(int i=0;i<nodecnt;i++){
@@ -169,10 +171,9 @@ dfa* createdfa(re_node *tree,int nodenum)
   }
   
   printf("\n");
-  for(int i=0;i<nodecnt;i++){
-    printf("index %d  ",nodearr[i]->index);
+  for(int i=1;i<leavecnt;i++){
+    printf("%d ",i);
     avltreeprint(followpos[i]);
-    //printf("%d \n",index[i]->key.leave->index);
   }
   printf("\n");
   */
@@ -196,7 +197,7 @@ dfa* createdfa(re_node *tree,int nodenum)
   travelavltree((tree->firstpos),tmp,256,tmpcnt);
   for(int i=0;i<tmpcnt;i++)
     insertset(curstate,tmp[i]);
-  signarray[statecnt]=getstatesign(curstate,leave);
+  markarray[statecnt]=getstatemark(curstate,leave);
   stateset[statecnt++]=curstate;
   
   while(1){
@@ -214,7 +215,7 @@ dfa* createdfa(re_node *tree,int nodenum)
       for(int j=0;j<curcnt;j++){
 	//printf("\nprintfollowpos\n");
 	//avltreeprint(followpos[curposition[j]]);
-	if(alphabet[i]==(leave[curposition[j]]->key.leave->index)){
+	if(alphabet[i]==(leave[curposition[j]]->value)){
 	  intersectset(&tmpset,(followpos[curposition[j]]));
 	}
       }
@@ -236,13 +237,11 @@ dfa* createdfa(re_node *tree,int nodenum)
       }
     }
   }
-  
   //printf("\n\n");
+  
   //find end state
-  int endstate;
   int travelarr[256]={0};
   int travelcnt;
-  //printf("endposition %d\n",endposition);
   for(int i=0;i<statecnt;i++){
     set *travelset=stateset[i];
     bzero(travelarr,sizeof(int)*256);
@@ -250,10 +249,9 @@ dfa* createdfa(re_node *tree,int nodenum)
     //printf("state %d",i);
     for(int j=0;j<travelcnt;j++){
       //printf(" %d ",travelarr[j]);
-      if(travelarr[j]==endposition){
-	//insertdarray(ret->end,(void*)(i+1));
-	endstateappend((ret->end),i+1,markarray[i]);
-      }
+      if(leave[travelarr[j]]->value==RE_END_SYMBOL &&
+	 leave[travelarr[j]]->mark!=0)
+	endstateappend((ret->end),i+1,leave[travelarr[j]]->mark);
     }
     //printf("\n");
   }

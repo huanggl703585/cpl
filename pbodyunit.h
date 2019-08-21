@@ -465,6 +465,7 @@ re_node *pbodyunitbuildretree(pbodyunit *list)
       rightnode=pbodyunitbuildrenode(pos);
       newnode->left=leftnode;
       newnode->right=rightnode;
+      newnode->nodenum+=(leftnode->nodenum+rightnode->nodenum);
       leftnode=newnode;
     }
     else{
@@ -472,6 +473,7 @@ re_node *pbodyunitbuildretree(pbodyunit *list)
       res=catnode;
       catnode->left=leftnode;
       catnode->right=newnode;
+      catnode->nodenum+=(leftnode->nodenum+newnode->nodenum);
       leftnode=catnode;
     }
   }
