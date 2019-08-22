@@ -112,7 +112,7 @@ int jumptableadd(jumptable_link *jtable,int from,int in,int to)
     createjumpnode(pos,in,to);
     pos->jumpcnt++;
   }
-  else{ //we take dup condition as exception
+  else{ //we consider dup condition as exception
     return 1;
   }
   return 0;

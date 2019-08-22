@@ -10,8 +10,6 @@
 #include <assert.h>
 #include <stdio.h>
 
-//input must not have empty char
-
 typedef struct tokenizer tokenizer;
 struct tokenizer{
   reader *reader;
@@ -20,6 +18,13 @@ struct tokenizer{
   dfa_instance *dfa;
   tokenlist *tlist;
 };
+
+#define tokenizerfail(c) {			\
+  printf("failed at %c\n",c);			\
+  assert(0); }					
+
+#define charhavemapper(tokenizer,id)		\
+  havemapper(tokenizer->gtable,id)
 
 tokenizer *createtokenizer(char *path,int gsize,int tsize)
 {
@@ -32,121 +37,141 @@ tokenizer *createtokenizer(char *path,int gsize,int tsize)
   return ret;
 }
 
-#define charhavemapper(tokenizer,id)		\
-  havemapper(tokenizer->gtable,id)
-
 token* gettoken(tokenizer *worker)
 {
-  char c=' '; //in order to use skipspace(reader,c)
+  char c; //in order to use skipspace(reader,c)
   reader* reader=worker->reader;
   token *ret;
-  skipspace(reader,c);
-  do{
+  
+  while((c=readone(reader))!='\0'){
+    if(dfainstartstate(worker->dfa))
+      skipspace(worker->reader,c);
+
     if(charhavemapper(worker,c)==0){
       if(walkdfa(worker->dfa,c)==0){
 	int result=worker->dfa->lastend;
+	if(result==0){
+	  tokenizerfail(c);
+	}
 	char str[64];
 	acceptword(worker->reader,str,64);
-	if(result==0)
-	  return NULL; //fail
-	else{
-	  ret=appendtoken(worker->tlist,str,result);
-	  restartdfainstance(worker->dfa);
-	  return ret;
-	}
+	ret=appendtoken(worker->tlist,str,result);
+	restartdfainstance(worker->dfa);
+	//printf("%s\n",str);
+	return ret;
       }
     }
-    else{
+    else{  //if have charmapper
       charmapper *pos,*head=worker->gtable->terminal[c];
-      int success=0;
+      int canextend=0;
+      int inputrecord;
+      dfa_instance copyright;
+      dfainstancecopy(worker->dfa,(&copyright));
       for_each_charmapper(pos,head){
 	int input=(int)(pos->key);
-	dfa_instance copyright;
-	dfainstancecopy(worker->dfa,(&copyright));
-	if(walkdfa(worker->dfa,input)==0){
-	  if(worker->dfa->lastend==0)
-	    dfainstanceundo((&copyright),worker->dfa);
-	  else{
-	    success=1;
-	    int result=worker->dfa->lastend;
-	    char str[64];
-	    acceptword(worker->reader,str,64);
-	    ret=appendtoken(worker->tlist,str,result);
-	    restartdfainstance(worker->dfa);
-	    return ret;
-	  }
-	}
-	else{
-	  success=1;
+	if((walkdfa(worker->dfa,input))!=0){
+	  canextend=1;
 	  break;
 	}
+	else{ //walkdfa(worker->dfa,input)==0)
+	  if(worker->dfa->lastend!=0){
+	    canextend=-(worker->dfa->lastend);
+	    inputrecord=input;
+	  }
+	  dfainstanceundo((&copyright),worker->dfa);
+	}
+      } //<-end of for_each
+      if(canextend==1)
+	continue;
+      if(canextend<0){
+	walkdfa(worker->dfa,inputrecord);
+	char str[64];
+	acceptword(worker->reader,str,64);
+	ret=appendtoken(worker->tlist,str,-canextend);
+	restartdfainstance(worker->dfa);
+	//printf("%s\n",str);
+	return ret;
       }
-      if(success==0)
-	return NULL; //fail
+      tokenizerfail(c);
     }
-  }while((c=readone(reader))!='\0');
+  }
   return NULL;
 }
 
 void _dotokenizer(tokenizer *worker)
 {
-  char c=0;
+  char c=' ';
   reader* reader=worker->reader;
   assert(reader!=NULL);
-  //c=readone(reader);
-  while((c=readone(reader))!='\0'){     
+
+  while((c=readone(reader))!='\0'){
+    //if dfa is in start state, we can skip the space safely
+    if(dfainstartstate(worker->dfa))
+      skipspace(worker->reader,c);
+    
     if(charhavemapper(worker,c)==0){
       if(walkdfa(worker->dfa,c)==0){
 	int result=worker->dfa->lastend;
+	if(result==0){ 
+	  tokenizerfail(c); //fail
+	}
 	char str[64];
 	acceptword(worker->reader,str,64);
-	if(result==0){ 
-	  if(isspace(c))
-	    acceptword(reader,&c,1);
-	  else
-	    assert(0); //fail
-	}
-	else
-	  appendtoken(worker->tlist,str,result);
+	//printf("%s\n",str);
+	appendtoken(worker->tlist,str,result);
 	restartdfainstance(worker->dfa);
       }
     }
     else{
       charmapper *pos,*head=worker->gtable->terminal[c];
-      int success=0;
+      int inputrecord;
+      int canextend=0;
+      dfa_instance copyright;
+      dfainstancecopy(worker->dfa,&(copyright));
+      //for each input:				
+      //case 1: walkdfa()!=0 : can extend, take the input directly
+      //case 2: walkdfa()==0 && lastend!=0, it means there is a token, take that input if any case 1 to every input
+      //case 3: walkdfa()==0 && lastend==0, it means dfa is stopped and no token, then throw a fault if eveny input is in case 3
       for_each_charmapper(pos,head){
 	int input=(int)(pos->key);
-	dfa_instance copyright;
-	dfainstancecopy(worker->dfa,(&copyright));
-	if(walkdfa(worker->dfa,input)==0){
-	  if(worker->dfa->lastend==0)
-	    dfainstanceundo((&copyright),worker->dfa);
-	  else{
-	    success=1;
-	    int result=worker->dfa->lastend;
-	    char str[64];
-	    acceptword(worker->reader,str,64);
-	    appendtoken(worker->tlist,str,result);
-	    restartdfainstance(worker->dfa);
-	  }
-	}
-	else{
-	  success=1;
+	if((walkdfa(worker->dfa,input))!=0){
+	  canextend=1;
 	  break;
 	}
-      }
-      if(success==0){ 
-	if(isspace(c))
-	  acceptword(reader,&c,1);
-	else
-	  assert(0);  //fail
+	else{  //((walkdfa(worker->dfa,input))==0)
+	  if(worker->dfa->lastend!=0){ //correct input
+	    canextend=-(worker->dfa->lastend);
+	    inputrecord=input;
+	  }
+	  dfainstanceundo((&copyright),worker->dfa);
+	}
+      } //<-end of for_each
+      if(canextend==1)
+	continue;
+      if(canextend<0){ //new word
+	walkdfa(worker->dfa,inputrecord);
+	char str[64];
+	acceptword(worker->reader,str,64);
+	//printf("%s\n",str);
+	appendtoken(worker->tlist,str,-canextend);
 	restartdfainstance(worker->dfa);
       }
+      tokenizerfail(c);
     }
-    
-    if(isspace(c)==1){
-      acceptword(reader,&c,1);
-    }
+  }
+}
+
+void printtokenlistwithname(tokenizer *tokenizer)
+{
+  printf("\n");
+  token *pos;
+  for_each_token(pos,(tokenizer->tlist)){
+    int gindex=pos->gindex;
+    int sindex=pos->sindex;
+    symbolitem *gitem=searchsymboltablebyid(tokenizer->gtable,gindex);
+    symbolitem *sitem=searchsymboltablebyid(tokenizer->ttable,sindex);
+    printf("%s %s\n",gitem->name,sitem->name);
+    //printf("%d %d\n",gindex,sindex);
   }
 }
 

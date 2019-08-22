@@ -49,6 +49,10 @@ struct dfa_instance{
 #define dfainstanceundo(copyright,origin)	\
   dfainstancecopy(copyright,origin)
 
+#define dfainstartstate(instance)		\
+  (instance->state==instance->dfa->start &&	\
+   instance->lastend==0)
+
 //state's type is set*
 #define getstatemark(state,leavearr) ({			\
       int key=state->key;				\
@@ -284,10 +288,9 @@ int walkdfa(dfa_instance *instance,int input)
 {
   int ret=jumptablefind(instance->dfa->jtable,instance->state,input);
   int isend;
-  instance->state=ret;
-  if((isend=findendstate(instance->dfa->end,instance->state))!=0){
+  if((isend=findendstate(instance->dfa->end,instance->state))!=0)
     instance->lastend=isend;
-  }
+  instance->state=ret;
   return ret;
 }
 

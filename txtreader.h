@@ -42,7 +42,7 @@ reader *createreader(char *path,int blocksize);
 #define acceptword(reader,recv,rsize) (readword(reader->dbuf,recv,rsize)) 
 
 #define skipspace(reader,c)			\
-  while(isspace(c)){				\
+  while((isspace(c))){				\
     acceptword(reader,&c,1);			\
     c=readone(reader);				\
   }

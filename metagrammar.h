@@ -25,6 +25,7 @@ int buildmetagrammar()
   
   array[pt++]=insertsymboltable(table,"token",NULL);
   array[pt++]=insertsymboltable(table,"identifier",NULL);
+  array[pt++]=insertsymboltable(table,"terminal",NULL);
   array[pt++]=insertsymboltable(table,"equivalence",NULL);
   array[pt++]=insertsymboltable(table,"identifier-nondigit",NULL);
   array[pt++]=insertsymboltable(table,"digit",NULL);
@@ -43,29 +44,39 @@ int buildmetagrammar()
   appendprodbody(pbpos,'|');
   appendprodbody(pbpos,array[2]);
   appendprodbody(pbpos,'|');
+  appendprodbody(pbpos,array[3]);
+  appendprodbody(pbpos,'|');
   appendprodbodyterminal(pbpos,'|');
   appendprodbody(pbpos,'|');
   appendprodbodyterminal(pbpos,'(');
   appendprodbody(pbpos,'|');
   appendprodbodyterminal(pbpos,')');
-
+  
   //identifier ::= identifier-nondigit
   //           ::= identifier identifier-nondigit
   //           ::= identifier digit
   spos=searchsymboltablebyid(table,array[1]);
   ppos=spos->attr->attr.prod=createproduction(array[1]);
   pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[3]);
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[1]);
-  appendprodbody(pbpos,array[3]);
+  appendprodbody(pbpos,array[4]);
   pbpos=createprodbodylinkprod(ppos);
   appendprodbody(pbpos,array[1]);
   appendprodbody(pbpos,array[4]);
+  pbpos=createprodbodylinkprod(ppos);
+  appendprodbody(pbpos,array[1]);
+  appendprodbody(pbpos,array[5]);
 
-  //equivalence ::= ':' ':' '='
+  //terminal ::= alpha | digit
   spos=searchsymboltablebyid(table,array[2]);
   ppos=spos->attr->attr.prod=createproduction(array[2]);
+  pbpos=createprodbodylinkprod(ppos);
+  appendprodbody(pbpos,array[5]);
+  appendprodbody(pbpos,'|');
+  appendprodbody(pbpos,array[6]);
+
+  //equivalence ::= ':' ':' '='
+  spos=searchsymboltablebyid(table,array[3]);
+  ppos=spos->attr->attr.prod=createproduction(array[3]);
   pbpos=createprodbodylinkprod(ppos);
   appendprodbodyterminal(pbpos,':');
   appendprodbodyterminal(pbpos,':');
@@ -73,23 +84,23 @@ int buildmetagrammar()
 
   //identifier-nondigit ::= '_' | alpha
   //when in debug: identifier-nondigit ::= ( '_' | alpha )
-  spos=searchsymboltablebyid(table,array[3]);
-  ppos=spos->attr->attr.prod=createproduction(array[3]);
+  spos=searchsymboltablebyid(table,array[4]);
+  ppos=spos->attr->attr.prod=createproduction(array[4]);
   pbpos=createprodbodylinkprod(ppos);
   appendprodbody(pbpos,'(');
   appendprodbodyterminal(pbpos,'_');
   appendprodbody(pbpos,'|');
-  appendprodbody(pbpos,array[5]);
+  appendprodbody(pbpos,array[6]);
   appendprodbody(pbpos,')');
 
   //digit
-  spos=searchsymboltablebyid(table,array[4]);
-  ppos=spos->attr->attr.prod=createproduction(array[4]);
+  spos=searchsymboltablebyid(table,array[5]);
+  ppos=spos->attr->attr.prod=createproduction(array[5]);
   appendprodrange(ppos,'0','9');
   
   //alpha
-  spos=searchsymboltablebyid(table,array[5]);
-  ppos=spos->attr->attr.prod=createproduction(array[5]);
+  spos=searchsymboltablebyid(table,array[6]);
+  ppos=spos->attr->attr.prod=createproduction(array[6]);
   appendprodrange(ppos,'a','z');
   appendprodrange(ppos,'A','Z');
 
@@ -105,16 +116,16 @@ int buildmetagrammar()
   re_node *tree=symboltablebuildretree(table,table->bias);
   //printretree(tree);
   dfa *dfa=createdfa(tree,tree->nodenum);
-  printdfa(dfa);
-  //tokenizer *tokenizer=createtokenizer(path,1024,1024);
-  //tokenizer->gtable=table;
-  //tokenizer->dfa=createdfainstance(dfa);
+  //printdfa(dfa);
+  tokenizer *tokenizer=createtokenizer(path,1024,1024);
+  tokenizer->gtable=table;
+  tokenizer->dfa=createdfainstance(dfa);
   
-  //_dotokenizer(tokenizer);
+  _dotokenizer(tokenizer);
   //token *ttmp;
   //while((ttmp=gettoken(tokenizer))!=NULL)
   //  ;
-  //printtokenlist(tokenizer->tlist);
+  printtokenlistwithname(tokenizer);
 
   //buildfirst(table);
   //buildfollow(table,table->bias);

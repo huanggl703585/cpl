@@ -1,17 +1,17 @@
 start ::= token
-      ::= preprocessing-token
+      ::= preprocessing_token
 
 token ::= keyword
       ::= identifier
       ::= constant
-      ::= string-literal
+      ::= string_literal
       ::= punctuator
 
-preprocessing-token ::= header-name
+preprocessing_token ::= header_name
 		    ::= identifier
-		    ::= pp-number
-		    ::= character-constant
-		    ::= string-literal
+		    ::= pp_number
+		    ::= character_constant
+		    ::= string_literal
 		    ::= punctuator
 
 keyword ::= auto
@@ -52,12 +52,12 @@ keyword ::= auto
 	::= register
 	::= union	
 
-identifier ::= identifier-nondigit
-	   ::= identifier idetifier-nondigit
+identifier ::= identifier_nondigit
+	   ::= identifier idetifier_nondigit
 	   ::= identifier digit
 
-identifier-nondigit ::= nondigit
-		    ::= universal-character-name
+identifier_nondigit ::= nondigit
+		    ::= universal_character_name
 		   
 nondigit ::= _
 	 ::= a

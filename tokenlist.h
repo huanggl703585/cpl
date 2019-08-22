@@ -23,7 +23,10 @@ struct tokenlist{
 #define tokenlistfirst(tlisthead)		\
   list_first_entry(&(tlisthead->tlist->list),token,list)
 
-#define appendtokenlist(tokenlist,gindex,sindex) ({		\
+#define for_each_token(pos,listhead)		\
+  list_for_each_entry(pos,&(listhead->tlist->list),list)
+
+#define appendtokenlist(tokenlist,sindex,gindex) ({		\
     token *__tmp=createtoken(gindex,sindex);			\
     listaddtail(&(__tmp->list),&(tokenlist->tlist->list));	\
     __tmp;})
@@ -54,7 +57,7 @@ token* appendtoken(tokenlist *tlist,char *str,int gindex)
 {
   int sid=insertsymboltable(tlist->stable,str,NULL);
   token *ret=appendtokenlist(tlist,sid,gindex);
-  //printf("%d %s\n",sid,str);
+  //printf("%d %d\n",sid,gindex);
   return ret;
 }
 

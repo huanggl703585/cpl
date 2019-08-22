@@ -1,0 +1,60 @@
+dfa start 1
+dfa end
+2 128
+3 128
+3 129
+4 129
+5 124
+7 40
+8 41
+11 130
+jumptable statecnt 11
+stateid 1
+ 40 7
+ 41 8
+ 58 6
+ 95 2
+ 124 5
+ 132 4
+ 133 3
+stateid 2
+ 95 2
+ 132 2
+ 133 2
+ 2147483647 9
+stateid 3
+ 95 2
+ 132 2
+ 133 2
+ 2147483647 9
+stateid 4
+ 2147483647 9
+stateid 5
+ 2147483647 9
+stateid 6
+ 58 10
+stateid 7
+ 2147483647 9
+stateid 8
+ 2147483647 9
+stateid 9
+stateid 10
+ 61 11
+stateid 11
+ 2147483647 9
+
+
+	  if(worker->dfa->lastend==0)
+	    dfainstanceundo((&copyright),worker->dfa);
+
+	    else{
+	    fail=0;
+	    int result=worker->dfa->lastend;
+	    char str[64];
+	    acceptword(worker->reader,str,64);
+	    printf("%s\n",str);
+	    appendtoken(worker->tlist,str,result);
+	    skipspace(worker->reader,c);
+	    restartdfainstance(worker->dfa);
+	    break;
+	  }
