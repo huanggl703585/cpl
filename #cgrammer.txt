@@ -7,7 +7,6 @@ token ::= keyword
       ::= string_literal
       ::= punctuator
 
-#annotation 1
 
 preprocessing_token ::= header_name
 		    ::= identifier
@@ -16,46 +15,6 @@ preprocessing_token ::= header_name
 		    ::= string_literal
 		    ::= punctuator
 
-keyword ::= auto
-	::= keyw
-	::= keyword
-	::= enum
-	::= restrict
-	::= unsigned
-	::= break
-	::= extern
-	::= return
-	::= void
-	::= case
-	::= float
-	::= short
-	::= volatile
-	::= char
-#annotation 2
-	::= for
-	::= signed
-	::= while
-	::= const
-	::= goto
-	::= sizeof
-	::= _Bool
-	::= continue
-	::= if
-	::= static
-	::= _Complex
-	::= default
-	::= inline
-	::= struct
-	::= _Imaginary
-	::= do
-	::= int
-	::= switch
-	::= double
-	::= long
-	::= typedef
-	::= else
-	::= register
-	::= union	
 
 identifier ::= identifier_nondigit
 	   ::= identifier idetifier_nondigit
@@ -69,7 +28,6 @@ nondigit ::= _
 	 ::= b 
 	 ::= c
 	 ::= d
-#annotation 3
 	 ::= e
 	 ::= f
 	 ::= g

@@ -1,0 +1,12 @@
+#include "keyword.h"
+
+int main()
+{
+  char *s1="hello";
+  char *s2="world";
+
+  kwdict *dict=createkwdicthead();
+  kwdictinsert(dict,s1);
+  kwdictinsert(dict,s2);
+  printkwdict(dict);
+}

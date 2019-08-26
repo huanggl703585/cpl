@@ -20,6 +20,9 @@ struct slist{
 #define appendslist(new,chain)			\
   listaddtail(&(((slist*)new)->list),&(((slist*)chain)->list))
 
+#define slist_insert_order(slisthead,newnode,cmpfunc)	\
+  list_insert_order(slisthead,list,key,newnode,cmpfunc)
+
 #define initslist(name,_key)			\
   slist *name=(slist*)malloc(sizeof(slist));	\
   name->key=(void*)_key;			\

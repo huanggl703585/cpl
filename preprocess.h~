@@ -1,0 +1,8 @@
+#ifndef __PREPROCESS_H
+#define __PREPROCESS_H
+
+//preprocess for input txt
+//1. delete annotation ( use # to note a line)
+//2. find keyword section, and add to keyword dictionary
+
+#endif

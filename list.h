@@ -97,11 +97,14 @@ void listappend(struct list_head *head,struct list_head *new)
       &pos->member!=(head);				\
       pos=list_next_entry(pos,member))
 
+//the list is ordered
 #define list_find_key(pos,listhead,member,keymember,target,isequal)	\
-  list_for_each_entry(pos,&(listhead->member),member){			\
-    if(isequal((void*)target,pos->keymember))				\
-      break;								\
-  }
+  do{									\
+    list_for_each_entry(pos,&(listhead->member),member){		\
+      if(isequal((void*)target,pos->keymember))				\
+	break;								\
+    }									\
+  }while(0)
 
 //from small to large
 #define list_cmp_key(pos,head,member,keymember,target,cmp)		\

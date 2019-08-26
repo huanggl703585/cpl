@@ -1,0 +1,8 @@
+#include "preprocess.h"
+
+int main()
+{
+  char *path="cgrammar.txt";
+  int fd;
+  preprocess(path,&fd);
+}

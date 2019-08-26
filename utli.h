@@ -11,6 +11,8 @@
 #define intcmp(x,y) ((((int)x)>((int)y))?1:((((int)x)==((int)y))?0:-1))
 #define intcmp_reverse(x,y) (((x)<(y))?1:(((x)==(y))?0:-1))
 
+#define strequal(s1,s2) (strcmp(s1,s2)==0)
+
 #define upperdiv(x,y) (((x)+(y)-1)/(y))
 
 #define keepinterval(minval,maxval,newval) {	\
