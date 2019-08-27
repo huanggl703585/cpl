@@ -1,0 +1,18 @@
+#include "kvpair.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+int main()
+{
+  kvpair *head=createkvpairhead();
+  intkvpairinsert(head,34,19);
+  intkvpairinsert(head,81,21);
+  intkvpairinsert(head,81,24);
+  intkvpairinsert(head,12,21);
+  intkvpairinsert(head,30,21);
+  intkvpairinsert(head,78,21);
+  intkvpairinsert(head,91,21);
+  intkvpairinsert(head,2,21);
+  printintkvpair(head);
+  printf("%d %d",intkvpairfind(head,81),intkvpairfind(head,3));
+}

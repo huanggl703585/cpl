@@ -1,0 +1,10 @@
+#ifndef __EXECUTE_H
+#define __EXECUTE_H
+
+void execute(char *input[]);
+
+void execute(char *input[])
+{
+
+}
+#endif

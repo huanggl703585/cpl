@@ -19,9 +19,10 @@
 #define S_NONTERMINAL  3
 #define S_HAVEEMPTY    4
 
-struct symbolattr;
-typedef struct symbolattr symbolattr;
+//used in structual grammar
+#define S_TERMINAL     5
 
+typedef struct symbolattr symbolattr;
 struct symbolattr{
   int type;
   union{
@@ -34,6 +35,8 @@ struct symbolattr{
   set *follow;
   darray *forecastlist;
 };
+
+symbolattr terminalattr={.type=S_TERMINAL};
 
 symbolattr *createsymbolattr(int id);
 

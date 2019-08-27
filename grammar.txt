@@ -1,5 +1,5 @@
 
-token ::= identifier | nonterminal | equivalence | '|' | '(' | ')'
+token ::= identifier | nonterminal | equivalence | '|' | '(' | ')' | keyword
 
 identifier ::= identifier-nondigit
 	   ::= identifier identifier-nondigit
@@ -15,6 +15,8 @@ digit ::= 0-9
 
 alpha ::= a-z | A-Z
 
+keyword ::= null
+
 127+
 0 token
 1 identifier
@@ -23,3 +25,22 @@ alpha ::= a-z | A-Z
 4 identifier-nondigit
 5 digit
 6 alpha
+7 keyword
+
+============================================
+
+start ::= production start
+      ::= production
+
+production ::= head equivalence body
+
+head ::= identifier
+
+body ::= token body
+     ::= token
+
+bias 0
+0 start
+1 production
+2 head
+3 body

@@ -33,6 +33,9 @@ struct productionbody{
   _appendprodbody(prodbody,elem);		\
   prodbody->cnt++
 
+#define appendprodbodyor(prodbody)		\
+  appendprodbody(prodbody,'|')
+
 #define appendprodbodyterminal(prodbody,elem)	\
   _appendprodbody(prodbody,'\'');			\
   _appendprodbody(prodbody,elem);			\

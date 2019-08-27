@@ -75,6 +75,10 @@ int funcintcmp(void *a,void *b)
   return intcmp(_a,_b);
 }
 
+int funcintisequal(void *a,void *b)
+{
+  return (int)a==(int)b;
+}
 
 int min3(int a,int b,int c);
 int _getstr(char *pt); //get the offset of string start from pt

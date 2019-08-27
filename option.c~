@@ -1,0 +1,10 @@
+#ifndef __OPTION_C
+#define __OPTION_C
+
+//mark the option of the program
+typedef struct option option;
+struct option{
+
+};
+
+#endif

@@ -11,8 +11,7 @@ typedef kvpair endstate;
 
 int findendstate(endstate* list,int state)
 {
-  void *value=kvpairfind(list,(void*)state);
-  return (int)(value);
+  return intkvpairfind(list,state);
 }
 
 typedef struct dfa dfa;
@@ -273,7 +272,7 @@ void printdfa(dfa* dfa)
 {
   printf("dfa start %d\n",dfa->start);
   printf("dfa end\n");
-  printkvpair(dfa->end);
+  printintkvpair(dfa->end);
   printjumptable(dfa->jtable);
 }
 

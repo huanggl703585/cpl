@@ -117,7 +117,7 @@ void listappend(struct list_head *head,struct list_head *new)
 //ignore it
 //if &(pos->member)==head, can't find relative key
 
-//listhead is different from list above
+//listhead is different from list above, it is an entry
 #define list_insert_order(listhead,member,keymember,new,cmp)		\
   do{									\
     typeof(listhead) __pos;						\

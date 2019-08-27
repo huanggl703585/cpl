@@ -43,18 +43,3 @@ stateid 10
 stateid 11
  2147483647 9
 
-
-	  if(worker->dfa->lastend==0)
-	    dfainstanceundo((&copyright),worker->dfa);
-
-	    else{
-	    fail=0;
-	    int result=worker->dfa->lastend;
-	    char str[64];
-	    acceptword(worker->reader,str,64);
-	    printf("%s\n",str);
-	    appendtoken(worker->tlist,str,result);
-	    skipspace(worker->reader,c);
-	    restartdfainstance(worker->dfa);
-	    break;
-	  }

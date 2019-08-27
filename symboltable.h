@@ -44,6 +44,7 @@ symboltable* createsymboltable(size_t size,int bias);
 int insertsymboltable(symboltable* st,char *str,symbolattr *attr);
 symbolitem* searchsymboltablebyname(symboltable *st,char *str);
 symbolitem* searchsymboltablebyid(symboltable *st,int id);
+int searchsymbolidbyname(symboltable *st,char *str);
 int changesymboltablebyname(symboltable *st,char *str,symbolattr *attr);
 int changesymboltablebyid(symboltable *st,int id,symbolattr *attr);
 
@@ -97,7 +98,7 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   item->id=((st->count)+st->bias);
   item->derivecnt=0;
   if(attr!=NULL)
-    item->attr=attr;
+    memcpy(item->attr,attr,sizeof(symbolattr));
   else
     item->attr=createsymbolattr(item->id);
   st->table[hashvalue]=item;
@@ -119,6 +120,12 @@ symbolitem* searchsymboltablebyname(symboltable *st,char *str)
   }while(item!=NULL && hashvalue!=head);
   
   return NULL;
+}
+
+int searchsymbolidbyname(symboltable *st,char *str)
+{
+  symbolitem *item=searchsymboltablebyname(st,str);
+  return item->id;
 }
 
 symbolitem* searchsymboltablebyid(symboltable *st,int id)
@@ -162,6 +169,24 @@ symboltableoption *symboltablegetoption(symboltable *table)
 void symboltablesetoption(symboltable *table,symboltableoption *option)
 {
   memcpy(&(table->option),option,sizeof(symboltableoption));
+}
+
+//=========================================
+#define isterminal(table,index)			\
+  (index<table->bias || istoken(table,index))
+int istoken(symboltable *table,int id);
+void appendprodbodybyname(symboltable *table,productionbody *pbpos,char *str);
+
+int istoken(symboltable *table,int id)
+{
+  symbolitem *item=searchsymboltablebyid(table,id);
+  return item->attr->type==S_TERMINAL;
+}
+
+void appendprodbodybyname(symboltable *table,productionbody *pbpos,char *str)
+{
+  int id=searchsymbolidbyname(table,str);
+  appendprodbody(pbpos,id);
 }
 
 //==========================================
@@ -279,6 +304,7 @@ void extractleftlcp(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
     symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    if(item->attr->type==S_TERMINAL) continue;
     extractleftlcpone(table,item);
   }
 }
@@ -328,6 +354,7 @@ void elimateleftrecursion(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
     symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    if(item->attr->type==S_TERMINAL) continue;
     elimateleftrecursionone(table,item);
   }
 }
