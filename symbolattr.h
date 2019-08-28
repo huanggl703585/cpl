@@ -30,7 +30,7 @@ struct symbolattr{
     charmapper *mapper;
   }attr;
   dfa *dfa;
-  //node *node;
+
   set *first;
   set *follow;
   darray *forecastlist;
@@ -38,9 +38,9 @@ struct symbolattr{
 
 symbolattr terminalattr={.type=S_TERMINAL};
 
-symbolattr *createsymbolattr(int id);
+symbolattr *createSymbolAttr(int id);
 
-symbolattr *createsymbolattr(int id)
+symbolattr *createSymbolAttr(int id)
 {
   symbolattr *ret=(symbolattr*)malloc(sizeof(symbolattr));
   ret->attr.prod=createproduction(id);
@@ -48,13 +48,13 @@ symbolattr *createsymbolattr(int id)
 }
 
 //==============================
-void _prodinunit(symbolattr *attr);
-void _printtablepunit(symbolattr *attr);
-void _elimateparenthese(symbolattr *attr);
-void _elimateor(symbolattr *attr);
-void _extractleftlcp(symbolattr *attr);
+void _prodInUnit(symbolattr *attr);
+void _printTableUnit(symbolattr *attr);
+void _elimateParenthese(symbolattr *attr);
+void _elimateOr(symbolattr *attr);
+void _extractLeftLcp(symbolattr *attr);
 
-void _prodinunit(symbolattr *attr)
+void _prodInUnit(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
   productionbody *pbpos;
@@ -63,7 +63,7 @@ void _prodinunit(symbolattr *attr)
   }
 }
 
-void _printtablepunit(symbolattr *attr)
+void _printTableUnit(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
   printf("prodcnt %d\n",prod->cnt);
@@ -75,21 +75,21 @@ void _printtablepunit(symbolattr *attr)
   }
 }
 
-void _elimateparenthese(symbolattr *attr)
+void _elimateParenthese(symbolattr *attr)
 {
   prodelimateparenthese(attr->attr.prod);
 }
 
-void _elimateor(symbolattr *attr)
+void _elimateOr(symbolattr *attr)
 {
   prodelimateor(attr->attr.prod);
 }
 
 //========================symbol type
-void _symbolsettype(symbolattr *attr);
-void _printsymboltype(symbolattr *attr);
+void _symbolSetType(symbolattr *attr);
+void _printSymbolType(symbolattr *attr);
 
-void _symbolsettype(symbolattr *attr)
+void _symbolSetType(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
   productionbody *pbpos;
@@ -114,7 +114,7 @@ void _symbolsettype(symbolattr *attr)
     attr->type=S_TERMINALSEQ;
 }
 
-void _printsymboltype(symbolattr *attr)
+void _printSymbolType(symbolattr *attr)
 {
   int type=attr->type;
   switch(type){
@@ -122,14 +122,15 @@ void _printsymboltype(symbolattr *attr)
   case S_TERMINALSET: {printf("S_TERMINALSET\n");break;}
   case S_TERMINALSEQ: {printf("S_TERMINALSEQ\n");break;}
   case S_NONTERMINAL: {printf("S_NONTERMINAL\n");break;}
+  case S_TERMINAL: {printf("S_TERMINAL\n");break;}
   default:assert(0);
   } 
 }
   
 //===================re_tree
-void _symboltablebuildretree(symbolattr *attr);
+void _symboltableBuildRetree(symbolattr *attr);
 
-void _symboltablebuildretree(symbolattr *attr)
+void _symboltableBuildRetree(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
   if(attr->type!=S_TERMINALSET)

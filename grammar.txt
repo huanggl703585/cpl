@@ -1,5 +1,5 @@
 
-token ::= identifier | nonterminal | equivalence | '|' | '(' | ')' | keyword
+token ::= identifier | nonterminal | equivalence | '|' | '(' | ')' 
 
 identifier ::= identifier-nondigit
 	   ::= identifier identifier-nondigit
@@ -29,7 +29,7 @@ keyword ::= null
 
 ============================================
 
-start ::= production start
+start ::= start production
       ::= production
 
 production ::= head equivalence body
@@ -39,7 +39,7 @@ head ::= identifier
 body ::= token body
      ::= token
 
-bias 0
+bias 7
 0 start
 1 production
 2 head

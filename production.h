@@ -114,10 +114,13 @@ productionbody *pbodyunitcreateprodbody(pbodyunit *u)
 void prodbodyappendpbodyunitlist(productionbody *prodbody,pbodyunit *start)
 {
   pbodyunit *listhead=prodbody->unit;
+  int cnt=0;
   for(pbodyunit *pos=pbodyunitnext(start);pos->type!=0;pos=pbodyunitnext(pos)){
     pbodyunit *copy=_pbodyunitcopy(pos);
     pbodyunitappend(copy,listhead);
+    cnt++;
   }
+  prodbody->cnt=cnt;
 }
 
 void prodbodyappendpbodyunit(productionbody *prodbody,pbodyunit *u)
@@ -125,6 +128,7 @@ void prodbodyappendpbodyunit(productionbody *prodbody,pbodyunit *u)
   pbodyunit *listhead=prodbody->unit;
   pbodyunit *copy=_pbodyunitcopy(u);
   pbodyunitappend(copy,listhead);
+  prodbody->cnt++;
 }
 
 //=====================================

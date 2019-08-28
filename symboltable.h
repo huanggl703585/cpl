@@ -35,23 +35,24 @@ struct symboltable{
 #define iterate_symbol_attr(table,func)					\
   do{									\
     for(int __i=0;__i<table->count;__i++){				\
-      symbolitem *__item=searchsymboltablebyid(table,__i+table->bias);	\
+      symbolitem *__item=searchSymboltableById(table,__i+table->bias);	\
+      if(__item->attr->type==S_TERMINAL) continue;			\
       func(__item->attr);						\
     }									\
   }while(0)
 
-symboltable* createsymboltable(size_t size,int bias);
-int insertsymboltable(symboltable* st,char *str,symbolattr *attr);
-symbolitem* searchsymboltablebyname(symboltable *st,char *str);
-symbolitem* searchsymboltablebyid(symboltable *st,int id);
-int searchsymbolidbyname(symboltable *st,char *str);
-int changesymboltablebyname(symboltable *st,char *str,symbolattr *attr);
-int changesymboltablebyid(symboltable *st,int id,symbolattr *attr);
+symboltable* createSymboltable(size_t size,int bias);
+int insertSymboltable(symboltable* st,char *str,symbolattr *attr);
+symbolitem* searchSymboltableByName(symboltable *st,char *str);
+symbolitem* searchSymboltableById(symboltable *st,int id);
+int searchSymbolIdByName(symboltable *st,char *str);
+int changeSymboltableByName(symboltable *st,char *str,symbolattr *attr);
+int changeSymboltableById(symboltable *st,int id,symbolattr *attr);
 
-symboltableoption *symboltablegetoption(symboltable *table);
-void symboltablesetoption(symboltable *table,symboltableoption *option);
+symboltableoption *symboltableGetOption(symboltable *table);
+void symboltableSetOption(symboltable *table,symboltableoption *option);
 
-symboltable *createsymboltable(size_t size,int bias)
+symboltable *createSymboltable(size_t size,int bias)
 {
   symboltable* ret=(symboltable*)malloc(sizeof(symboltable));
   ret->size=size;
@@ -70,9 +71,9 @@ symboltable *createsymboltable(size_t size,int bias)
   return ret;
 }
 
-int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
+int insertSymboltable(symboltable *st,char *str,symbolattr *attr)
 {
-  unsigned int hashvalue = strhash(str)%(st->size);
+  unsigned int hashvalue = strHash(str)%(st->size);
   unsigned int head=hashvalue;
   symbolitem *item=(st->table)[hashvalue];
 
@@ -97,19 +98,21 @@ int insertsymboltable(symboltable *st,char *str,symbolattr *attr)
   item->name=pt;
   item->id=((st->count)+st->bias);
   item->derivecnt=0;
-  if(attr!=NULL)
+  if(attr!=NULL){
+    item->attr=(symbolattr*)malloc(sizeof(symbolattr));
     memcpy(item->attr,attr,sizeof(symbolattr));
+  }
   else
-    item->attr=createsymbolattr(item->id);
+    item->attr=createSymbolAttr(item->id);
   st->table[hashvalue]=item;
   st->idarray[item->id]=hashvalue;
   st->count++;
   return item->id;
 }
 
-symbolitem* searchsymboltablebyname(symboltable *st,char *str)
+symbolitem* searchSymboltableByName(symboltable *st,char *str)
 {
-  unsigned int hashvalue = strhash(str)%(st->size);
+  unsigned int hashvalue = strHash(str)%(st->size);
   unsigned int head=hashvalue;
   symbolitem *item=(st->table)[hashvalue];
   
@@ -122,22 +125,22 @@ symbolitem* searchsymboltablebyname(symboltable *st,char *str)
   return NULL;
 }
 
-int searchsymbolidbyname(symboltable *st,char *str)
+int searchSymbolIdByName(symboltable *st,char *str)
 {
-  symbolitem *item=searchsymboltablebyname(st,str);
+  symbolitem *item=searchSymboltableByName(st,str);
   return item->id;
 }
 
-symbolitem* searchsymboltablebyid(symboltable *st,int id)
+symbolitem* searchSymboltableById(symboltable *st,int id)
 {
   int pos=st->idarray[id];
   symbolitem* item=st->table[pos];
   return item;
 }
 
-int changesymboltable(symboltable *st,char *str,symbolattr *attr)
+int changeSymboltable(symboltable *st,char *str,symbolattr *attr)
 {
-  unsigned int hashvalue = strhash(str)%(st->size);
+  unsigned int hashvalue = strHash(str)%(st->size);
   unsigned int head=hashvalue;
   symbolitem *item=(st->table)[hashvalue];
   
@@ -152,45 +155,45 @@ int changesymboltable(symboltable *st,char *str,symbolattr *attr)
   return 1;
 }
 
-int changesymboltablebyid(symboltable *st,int id,symbolattr *attr)
+int changeSymboltableById(symboltable *st,int id,symbolattr *attr)
 {
   int pos=st->idarray[id];
   symbolitem *item=st->table[pos];
   item->attr=attr;
 }
 
-symboltableoption *symboltablegetoption(symboltable *table)
+symboltableoption *symboltableGetOption(symboltable *table)
 {
   symboltableoption *ret=(symboltableoption*)malloc(sizeof(symboltableoption));
   memcpy(ret,&(table->option),sizeof(symboltableoption));
   return ret;
 }
 
-void symboltablesetoption(symboltable *table,symboltableoption *option)
+void symboltableSetOption(symboltable *table,symboltableoption *option)
 {
   memcpy(&(table->option),option,sizeof(symboltableoption));
 }
 
 //=========================================
 #define isterminal(table,index)			\
-  (index<table->bias || istoken(table,index))
-int istoken(symboltable *table,int id);
-void appendprodbodybyname(symboltable *table,productionbody *pbpos,char *str);
+  (index<table->bias || isToken(table,index))
+int isToken(symboltable *table,int id);
+void appendProdbodyByName(symboltable *table,productionbody *pbpos,char *str);
 
-int istoken(symboltable *table,int id)
+int isToken(symboltable *table,int id)
 {
-  symbolitem *item=searchsymboltablebyid(table,id);
+  symbolitem *item=searchSymboltableById(table,id);
   return item->attr->type==S_TERMINAL;
 }
 
-void appendprodbodybyname(symboltable *table,productionbody *pbpos,char *str)
+void appendProdbodyByName(symboltable *table,productionbody *pbpos,char *str)
 {
-  int id=searchsymbolidbyname(table,str);
+  int id=searchSymbolIdByName(table,str);
   appendprodbody(pbpos,id);
 }
 
 //==========================================
-#define symbolderivename(newname,oriname,ulen)			\
+#define symbolDeriveName(newname,oriname,ulen)			\
   char *newname=(char*)malloc(strlen(oriname)+1+ulen);		\
   do{								\
     char padding[ulen+1];					\
@@ -199,62 +202,143 @@ void appendprodbodybyname(symboltable *table,productionbody *pbpos,char *str)
     sprintf(newname,"%s%s",padding,oriname);			\
   }while(0)
 
-int derivenewsymbol(symboltable *table,symbolitem *origin)
+int deriveNewSymbol(symboltable *table,symbolitem *origin);
+
+int deriveNewSymbol(symboltable *table,symbolitem *origin)
 {
   //symbolattr *attr=createsymbolattr();
   origin->derivecnt++;
-  symbolderivename(newname,origin->name,origin->derivecnt);
-  return insertsymboltable(table,newname,NULL);
+  symbolDeriveName(newname,origin->name,origin->derivecnt);
+  return insertSymboltable(table,newname,NULL);
 }
 
 //===========================================
-void reformproduction(symboltable *table);
+void reformLexcialProduction(symboltable *table);
+void reformStructualProduction(symboltable *table);
 
-void prodinunit(symboltable *table);
-void disassembleor(symboltable *table);
-void elimateparenthese(symboltable *table);
-void elimateor(symboltable *table);
-void extractleftlcpone(symboltable *table,symbolitem *item);
-void extractleftlcp(symboltable *table);
-void elimateleftrecursionone(symboltable *table,symbolitem *item);
-void elimateleftrecursion(symboltable *table);
-void printtablepunit(symboltable *table);
+void prodInUnit(symboltable *table);
+void reviseUnitType(symboltable *table);
+void _reviseUnitType(symboltable *table,pbodyunit *unit);
 
-void reformproduction(symboltable *table)
+void disassembleOr(symboltable *table);
+void elimateParenthese(symboltable *table);
+void elimateOr(symboltable *table);
+void extractLeftLcpOne(symboltable *table,symbolitem *item);
+void extractLeftLcp(symboltable *table);
+void elimateLeftRecursionOne(symboltable *table,symbolitem *item);
+void elimateLeftRecursion(symboltable *table);
+void printTablePunit(symboltable *table);
+
+void pbodyunitAddEdge(pbodyunit *list,node nodearr[],int *nodenum,int head,int bias);
+void symbolToposort(symboltable *table);
+
+//solve left recursion before
+void symbolSetType(symboltable *table);
+void printSymbolType(symboltable *table);
+
+void symbolSetMapper(symboltable *table);
+void _symbolSetMapper(symboltable *table,production *prod);
+void printSymbolMapper(symboltable *table);
+
+//option==0 print in id order
+//option==1 print in toposort order
+void printProductionWithName(symboltable *table,int option);
+void printSymboltable(symboltable *table,int option);
+
+
+void reformLexcialProduction(symboltable *table)
 {
-  prodinunit(table);
-  elimateparenthese(table);
-  elimateor(table);
-  extractleftlcp(table);
-  elimateleftrecursion(table);
+  prodInUnit(table);
+  //printTablePunit(table);
+  elimateParenthese(table);
+  elimateOr(table);
+  extractLeftLcp(table);
+  elimateLeftRecursion(table);
+  symbolSetType(table);
+  //printsymboltype(table);
+  symbolSetMapper(table);
+  //printsymbolmapper(table);
+  symbolToposort(table);
+  //printproductionwithname(table,1);
 }
 
-void prodinunit(symboltable *table)
+void reformStructualProduction(symboltable *table)
 {
-  iterate_symbol_attr(table,_prodinunit);
+  prodInUnit(table);
+  reviseUnitType(table);
+  //printTablePunit(table);
+  elimateParenthese(table);
+  elimateOr(table);
+  extractLeftLcp(table);
+  elimateLeftRecursion(table);
+  symbolSetType(table);
+  //printSymbolType(table);
+  //symbolToposort(table);
+  //printSymboltable(table,0);
+  //printProductionWithName(table,0);
 }
 
-void printtablepunit(symboltable *table)
+void prodInUnit(symboltable *table)
 {
-  //iterate_symbol_attr(table,_printtablepunit);  
+  iterate_symbol_attr(table,_prodInUnit);
+}
+
+void reviseUnitType(symboltable *table)
+{
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
-    printf("%s %d\n",item->name,item->id);
-    _printtablepunit(item->attr);
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
+    if(item->attr->type==S_TERMINAL) continue;
+    production *prod=item->attr->attr.prod;
+    productionbody *pbpos;
+    prod_for_each_prodbody(pbpos,prod){
+      pbodyunit *listhead=pbpos->unit;
+      pbodyunit *pos;
+      for_each_pbodyunit(pos,listhead){
+	_reviseUnitType(table,pos);
+      }
+    }
   }
 }
 
-void elimateparenthese(symboltable *table)
+void _reviseUnitType(symboltable *table,pbodyunit *unit)
 {
-  iterate_symbol_attr(table,_elimateparenthese);
+  if(unit->type==P_NONTERMINAL){
+    int index=unit->value.index;
+    symbolitem *item=searchSymboltableById(table,index);
+    if(item->attr->type==S_TERMINAL)
+      unit->type=P_TERMINAL;
+  }
+  else if(unit->type==P_COMBINE){
+    pbodyunit *listhead=unit->value.nest;
+    pbodyunit *pos;
+    for_each_pbodyunit(pos,listhead){
+      _reviseUnitType(table,pos);
+    }
+  }
 }
 
-void elimateor(symboltable *table)
+void printTablePunit(symboltable *table)
 {
-  iterate_symbol_attr(table,_elimateor);
+  //iterate_symbol_attr(table,_printTablePunit);  
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
+    printf("%s %d\n",item->name,item->id);
+    if(item->attr->type==S_TERMINAL) continue;
+    _printTableUnit(item->attr);
+  }
 }
 
-void extractleftlcpone(symboltable *table,symbolitem *item)
+void elimateParenthese(symboltable *table)
+{
+  iterate_symbol_attr(table,_elimateParenthese);
+}
+
+void elimateOr(symboltable *table)
+{
+  iterate_symbol_attr(table,_elimateOr);
+}
+
+void extractLeftLcpOne(symboltable *table,symbolitem *item)
 {
   production *prod=item->attr->attr.prod;
   int pt;
@@ -273,18 +357,21 @@ void extractleftlcpone(symboltable *table,symbolitem *item)
     if(pbodyunitfindlcp(unitarr,mark,size,&lcphead,&headindex)==0)
       return ;
   
-    int newid=derivenewsymbol(table,item);
-    symbolitem *newitem=searchsymboltablebyid(table,newid);
+    int newid=deriveNewSymbol(table,item);
+    symbolitem *newitem=searchSymboltableById(table,newid);
     production *newprod=newitem->attr->attr.prod;
     pbodyunit *newunit=createpbodyunit();
     newunit->type=P_NONTERMINAL;newunit->value.index=newid;
     pbodyunit *lcp=pbodyunitcopy(lcphead,unitarr[headindex]);
+    pbodyunit *newbody=pbodyunitcopy(lcphead,unitarr[headindex]);
+    pbodyunitappend(newunit,newbody);
     //printpbodyunit(lcp);
     //A-> alpha A` | beta
     //add new to A
     productionbody *originnewbody=createprodbodylinkprod(prod);
-    originnewbody->unit=lcp;
-    prodbodyappendpbodyunit(originnewbody,newunit);
+    originnewbody->unit=newbody;
+    originnewbody->cnt=headindex+2;
+    //prodbodyappendpbodyunit(originnewbody,newunit);
     //delete A's prod, add prod to A`
     pbpos=prod->productionbody;
     productionbody *pbtmp=prodbodynext(pbpos);
@@ -292,24 +379,30 @@ void extractleftlcpone(symboltable *table,symbolitem *item)
       pbpos=pbtmp;
       pbtmp=prodbodynext(pbtmp);
       if(mark[pt]!=0){
-	productionbody *tmppb=createprodbodylinkprod(newprod);
-	prodbodyappendpbodyunitlist(tmppb,unitarr[pt]);
+	if(!pbodyunitlistisempty(unitarr[pt])){
+	  productionbody *tmppb=createprodbodylinkprod(newprod);
+	  prodbodyappendpbodyunitlist(tmppb,unitarr[pt]);
+	}
 	productiondrop(prod,pbpos);
       }
     }
   }
 }
-
-void extractleftlcp(symboltable *table)
+/*
+      A  -> ab1 | ab2 | ... | abn | gamma
+  ==> A  -> aA` | gamma
+      A` -> b1 | b2 | ... | bn
+*/
+void extractLeftLcp(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
     if(item->attr->type==S_TERMINAL) continue;
-    extractleftlcpone(table,item);
+    extractLeftLcpOne(table,item);
   }
 }
 
-void elimateleftrecursionone(symboltable *table,symbolitem *item)
+void elimateLeftRecursionOne(symboltable *table,symbolitem *item)
 {
   production *prod=item->attr->attr.prod;
   int head=prod->head;
@@ -326,8 +419,8 @@ void elimateleftrecursionone(symboltable *table,symbolitem *item)
   if(!(pbodyunitfindleftrecursion(unitarr,mark,pcnt,head)))
     return ;
 
-  int newid=derivenewsymbol(table,item);
-  symbolitem *newitem=searchsymboltablebyid(table,newid);
+  int newid=deriveNewSymbol(table,item);
+  symbolitem *newitem=searchSymboltableById(table,newid);
   production *newprod=newitem->attr->attr.prod;
   pbodyunit *newunit=createpbodyunit();
   newunit->type=P_NONTERMINAL;newunit->value.index=newid;
@@ -350,53 +443,51 @@ void elimateleftrecursionone(symboltable *table,symbolitem *item)
   prodbodyappendpbodyunit(emptyprod,empty);
 }
 
-void elimateleftrecursion(symboltable *table)
+/*
+       A  -> A alpha
+  ==>  A  -> beta A`
+       A` -> alpha A` | empty
+*/
+void elimateLeftRecursion(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
     if(item->attr->type==S_TERMINAL) continue;
-    elimateleftrecursionone(table,item);
+    elimateLeftRecursionOne(table,item);
   }
 }
 
 //============================type,mapper
-//solve left recursion before
-void symbolsettype(symboltable *table);
-void printsymbolattr(symboltable *table);
 
-void symbolsetmapper(symboltable *table);
-void _symbolsetmapper(symboltable *table,production *prod);
-void printsymbolmapper(symboltable *table);
-
-#define havemapper(table,id)			\
+#define haveMapper(table,id)			\
   (table->terminal[id]!=NULL)
 
-void symbolsettype(symboltable *table)
+void symbolSetType(symboltable *table)
 {
-  iterate_symbol_attr(table,_symbolsettype);
+  iterate_symbol_attr(table,_symbolSetType);
 }
 
-void printsymboltype(symboltable *table)
+void printSymbolType(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
     printf("%s\t",item->name);
-    _printsymboltype(item->attr);
+    _printSymbolType(item->attr);
   }
 }
 
-void symbolsetmapper(symboltable *table)
+void symbolSetMapper(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
     if(item->attr->type==S_TERMINALSET){
       production *prod=item->attr->attr.prod;
-      _symbolsetmapper(table,prod);
+      _symbolSetMapper(table,prod);
     }
   }
 }
 
-void _symbolsetmapper(symboltable *table,production *prod)
+void _symbolSetMapper(symboltable *table,production *prod)
 {
   int mapto=prod->head;
   productionbody *pbpos;
@@ -412,7 +503,7 @@ void _symbolsetmapper(symboltable *table,production *prod)
   }
 }
 
-void printsymbolmapper(symboltable *table)
+void printSymbolMapper(symboltable *table)
 {
   for(int i=0;i<table->bias;i++){
     charmapper *mapper=table->terminal[i];
@@ -422,10 +513,8 @@ void printsymbolmapper(symboltable *table)
 }
 
 //===============================toposort
-void pbodyunitaddedge(pbodyunit *list,node nodearr[],int *nodenum,int head,int bias);
-void symboltoposort(symboltable *table);
 
-void pbodyunitaddedge(pbodyunit *list,node nodearr[],int *nodenum,int head,int bias)
+void pbodyunitAddEdge(pbodyunit *list,node nodearr[],int *nodenum,int head,int bias)
 {
   pbodyunit *pos;
   for_each_pbodyunit(pos,list){
@@ -439,11 +528,11 @@ void pbodyunitaddedge(pbodyunit *list,node nodearr[],int *nodenum,int head,int b
     }
     else if(pos->type==P_COMBINE){
       pbodyunit *nest=pos->value.nest;
-      pbodyunitaddedge(nest,nodearr,nodenum,head,bias);
+      pbodyunitAddEdge(nest,nodearr,nodenum,head,bias);
     }
   }
 }
-void symboltoposort(symboltable *table)
+void symbolToposort(symboltable *table)
 {
   //mind the difference of domain of table index and node index
   int nodenum=table->count;
@@ -454,7 +543,7 @@ void symboltoposort(symboltable *table)
   }
   
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
     if(item->attr->type!=S_NONTERMINAL) continue;
 
     production *prod=item->attr->attr.prod;
@@ -462,7 +551,7 @@ void symboltoposort(symboltable *table)
     productionbody *pbpos;
     prod_for_each_prodbody(pbpos,prod){
       pbodyunit *unitlist=pbpos->unit;
-      pbodyunitaddedge(unitlist,nodearr,&nodenum,head,table->bias);
+      pbodyunitAddEdge(unitlist,nodearr,&nodenum,head,table->bias);
     }
   }
   arraytopologysort(nodearr,table->count,table->toposort);
@@ -473,23 +562,23 @@ void symboltoposort(symboltable *table)
 //========================re_exp
 
 //return a expanded retree
-re_node* symboltablebuildretree(symboltable *table,int start);
+re_node* symboltableBuildRetree(symboltable *table,int start);
 //combine until start symbol, because we need to mark other symbol
-void symboltableretreecombine(symboltable *table,int start);
-void dosymboltableretreecombine(symboltable *table,re_node *root);
-void symboltableretreecopycombine(symboltable *table,re_node *root);
-void symboltableretreesetmark(symboltable *table,int start);
-void symboltableprintretree(symboltable *table);
+void symboltableRetreeCombine(symboltable *table,int start);
+void doSymboltableRetreeCombine(symboltable *table,re_node *root);
+void symboltableRetreeCopyCombine(symboltable *table,re_node *root);
+void symboltableRetreeSetMark(symboltable *table,int start);
+void symboltablePrintRetree(symboltable *table);
 
-re_node* symboltablebuildretree(symboltable *table,int start)
+re_node* symboltableBuildRetree(symboltable *table,int start)
 {
-  iterate_symbol_attr(table,_symboltablebuildretree);
-  symboltableretreecombine(table,start);
-  symboltableretreesetmark(table,start);
+  iterate_symbol_attr(table,_symboltableBuildRetree);
+  symboltableRetreeCombine(table,start);
+  symboltableRetreeSetMark(table,start);
   
-  symbolitem *startitem=searchsymboltablebyid(table,start);
+  symbolitem *startitem=searchSymboltableById(table,start);
   re_node *starttree=startitem->attr->attr.prod->retree;
-  symboltableretreecopycombine(table,starttree);
+  symboltableRetreeCopyCombine(table,starttree);
   re_node *ret=retreeexpand(starttree,0);
   retreecount(ret);
   return ret;
@@ -499,44 +588,44 @@ re_node* symboltablebuildretree(symboltable *table,int start)
 //for example, if production is token ::= identifier | equivalence
 //then the retree of identifier and equivalence is combined by reference
 //the retree of start symbol should be combined by copy
-void symboltableretreecombine(symboltable *table,int start)
+void symboltableRetreeCombine(symboltable *table,int start)
 {
   for(int i=0;i<table->count;i++){
     if(table->toposort[i]==start) continue;
-    symbolitem *item=searchsymboltablebyid(table,table->toposort[i]);
+    symbolitem *item=searchSymboltableById(table,table->toposort[i]);
     if(item->attr->type==S_TERMINALSET) continue;
 
-    dosymboltableretreecombine(table,item->attr->attr.prod->retree);
+    doSymboltableRetreeCombine(table,item->attr->attr.prod->retree);
   }
 }
 
-void dosymboltableretreecombine(symboltable *table,re_node *root)
+void doSymboltableRetreeCombine(symboltable *table,re_node *root)
 {
   re_node *left=root->left,*right=root->right;
   if(left!=NULL && left->type==RE_OPERAND && left->value>table->bias){
-    symbolitem *newitem=searchsymboltablebyid(table,left->value);
+    symbolitem *newitem=searchSymboltableById(table,left->value);
     re_node *newtree=newitem->attr->attr.prod->retree;
     retreereplace(root,isleft,newtree);
   }
   if(right !=NULL && right->type==RE_OPERAND && right->value>table->bias){
-    symbolitem *newitem=searchsymboltablebyid(table,right->value);
+    symbolitem *newitem=searchSymboltableById(table,right->value);
     re_node *newtree=newitem->attr->attr.prod->retree;
     retreereplace(root,isright,newtree);
   }
   if(left!=NULL && left->type==RE_OPERATOR)
-    dosymboltableretreecombine(table,left);
+    doSymboltableRetreeCombine(table,left);
   if(right!=NULL && right->type==RE_OPERATOR)
-    dosymboltableretreecombine(table,right);
+    doSymboltableRetreeCombine(table,right);
 }
 
 //special for start symbol
-void symboltableretreecopycombine(symboltable *table,re_node *root)
+void symboltableRetreeCopyCombine(symboltable *table,re_node *root)
 {
   re_node *left=root->left,*right=root->right;
   re_node *newtree;
   if(left!=NULL && left->type==RE_OPERAND){
     if(left->value>table->bias){
-      symbolitem *newitem=searchsymboltablebyid(table,left->value);
+      symbolitem *newitem=searchSymboltableById(table,left->value);
       newtree=retreecopy(newitem->attr->attr.prod->retree);
     }
     else
@@ -546,7 +635,7 @@ void symboltableretreecopycombine(symboltable *table,re_node *root)
   }
   if(right !=NULL && right->type==RE_OPERAND){
     if(right->value>table->bias){
-      symbolitem *newitem=searchsymboltablebyid(table,right->value);
+      symbolitem *newitem=searchSymboltableById(table,right->value);
       newtree=retreecopy(newitem->attr->attr.prod->retree);
     }
     else
@@ -555,14 +644,14 @@ void symboltableretreecopycombine(symboltable *table,re_node *root)
     retreereplace(root,isright,newtree);
   }
   if(left!=NULL && left->type==RE_OPERATOR)
-    symboltableretreecopycombine(table,left);
+    symboltableRetreeCopyCombine(table,left);
   if(right!=NULL && right->type==RE_OPERATOR)
-    symboltableretreecopycombine(table,right);
+    symboltableRetreeCopyCombine(table,right);
 }
 
-void symboltableretreesetmark(symboltable *table,int start)
+void symboltableRetreeSetMark(symboltable *table,int start)
 {
-  symbolitem *item=searchsymboltablebyid(table,start);
+  symbolitem *item=searchSymboltableById(table,start);
   re_node *root=item->attr->attr.prod->retree;
   re_node *stack[1024];
   int pt=0;
@@ -571,7 +660,7 @@ void symboltableretreesetmark(symboltable *table,int start)
     re_node *curnode=stack[pt];
     if(curnode->type==RE_OPERAND){
       if(curnode->value>table->bias){
-	symbolitem *curitem=searchsymboltablebyid(table,curnode->value);
+	symbolitem *curitem=searchSymboltableById(table,curnode->value);
 	retreesetmark(curitem->attr->attr.prod->retree,curnode->value);
       }
       else
@@ -582,10 +671,10 @@ void symboltableretreesetmark(symboltable *table,int start)
   }
 }
 
-void symboltableprintretree(symboltable *table)
+void symboltablePrintRetree(symboltable *table)
 {
   for(int i=0;i<table->count;i++){
-    symbolitem *item=searchsymboltablebyid(table,i+table->bias);
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
     if(item->attr->type==S_TERMINALSET) continue;
 
     printretree(item->attr->attr.prod->retree);
@@ -593,11 +682,8 @@ void symboltableprintretree(symboltable *table)
 }
 
 //========================print/test
-//option==0 print in id order
-//option==1 print in toposort order
-void printproductionwithname(symboltable *table,int option);
 
-void printproductionwithname(symboltable *table,int option)
+void printProductionWithName(symboltable *table,int option)
 {
   for(int i=0;i<table->count;i++){
     int id;
@@ -605,19 +691,35 @@ void printproductionwithname(symboltable *table,int option)
       id=i+table->bias;
     else
       id=table->toposort[i];
-    symbolitem *item=searchsymboltablebyid(table,id);
+    symbolitem *item=searchSymboltableById(table,id);
     symbolattr *attr=item->attr;
+    if(attr->type==S_TERMINAL){
+      printf("%s\n",item->name);
+      continue;
+    }
     production *prod=attr->attr.prod;
     int head=prod->head;
-    item=searchsymboltablebyid(table,head);
+    item=searchSymboltableById(table,head);
     printf("head %s cnt %d\n",item->name,prod->cnt);
     productionbody *pbpos;
     prod_for_each_prodbody(pbpos,prod){
       printf("cnt %d\n",pbpos->cnt);
-      _printpbodyunit(pbpos->unit);
+      printpbodyunit(pbpos->unit);
     }
     printf("\n");
   }
 }
 
+void printSymboltable(symboltable *table,int option)
+{
+  for(int i=0;i<table->count;i++){
+    int id;
+    if(option==0)
+      id=i+table->bias;
+    else
+      id=table->toposort[i];
+    symbolitem *item=searchSymboltableById(table,id);
+    printf("%d %s\n",item->id,item->name);
+  }
+}
 #endif

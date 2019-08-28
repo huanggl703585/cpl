@@ -17,25 +17,25 @@ struct tokenlist{
   token *tlist;
 };
 
-#define tokennext(tokenpt)			\
+#define tokenNext(tokenpt)			\
   list_next_entry(tokenpt,list)
 
-#define tokenlistfirst(tlisthead)		\
+#define tokenlistFirst(tlisthead)		\
   list_first_entry(&(tlisthead->tlist->list),token,list)
 
 #define for_each_token(pos,listhead)		\
   list_for_each_entry(pos,&(listhead->tlist->list),list)
 
-#define appendtokenlist(tokenlist,sindex,gindex) ({		\
-    token *__tmp=createtoken(gindex,sindex);			\
+#define appendTokenlist(tokenlist,sindex,gindex) ({		\
+    token *__tmp=createToken(gindex,sindex);			\
     listaddtail(&(__tmp->list),&(tokenlist->tlist->list));	\
     __tmp;})
 
-token *createtoken(int gindex,int sindex);
-tokenlist *createtokenlist(symboltable *gtable,symboltable *stable);
-token* appendtoken(tokenlist *tlist,char *str,int gindex);
+token *createToken(int gindex,int sindex);
+tokenlist *createTokenlist(symboltable *gtable,symboltable *stable);
+token* appendToken(tokenlist *tlist,char *str,int gindex);
 
-token *createtoken(int gindex,int sindex)
+token *createToken(int gindex,int sindex)
 {
   token *ret=(token*)malloc(sizeof(token));
   ret->gindex=gindex;
@@ -44,19 +44,19 @@ token *createtoken(int gindex,int sindex)
   return ret;
 }
 
-tokenlist *createtokenlist(symboltable *gtable,symboltable *stable)
+tokenlist *createTokenlist(symboltable *gtable,symboltable *stable)
 {
   tokenlist *ret=(tokenlist*)malloc(sizeof(tokenlist));
   ret->gtable=gtable;
   ret->stable=stable;
-  ret->tlist=createtoken(0,0);
+  ret->tlist=createToken(0,0);
   return ret;
 }
 
-token* appendtoken(tokenlist *tlist,char *str,int gindex)
+token* appendToken(tokenlist *tlist,char *str,int gindex)
 {
-  int sid=insertsymboltable(tlist->stable,str,NULL);
-  token *ret=appendtokenlist(tlist,sid,gindex);
+  int sid=insertSymboltable(tlist->stable,str,NULL);
+  token *ret=appendTokenlist(tlist,sid,gindex);
   //printf("%d %d\n",sid,gindex);
   return ret;
 }

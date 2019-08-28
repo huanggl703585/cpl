@@ -19,25 +19,30 @@ struct tokenizer{
   tokenlist *tlist;
 };
 
-#define tokenizerfail(c) {			\
+#define tokenizerFail(c) {			\
   printf("failed at %c\n",c);			\
   assert(0); }					
 
-#define charhavemapper(tokenizer,id)		\
-  havemapper(tokenizer->gtable,id)
+#define charHaveMapper(tokenizer,id)		\
+  haveMapper(tokenizer->gtable,id)
 
-tokenizer *createtokenizer(char *path,int gsize,int tsize)
+tokenizer *createTokenizer(char *path,int gsize,int tsize);
+token* getToken(tokenizer *worker);
+void _doTokenizer(tokenizer *worker);
+void printTokenlistWithName(tokenizer *tokenizer);
+
+tokenizer *createTokenizer(char *path,int gsize,int tsize)
 {
   tokenizer *ret=(tokenizer*)malloc(sizeof(tokenizer));
   ret->reader=createreader(path,BLOCKSIZE);
-  ret->gtable=createsymboltable(gsize,ASCII_BIAS);
-  ret->ttable=createsymboltable(tsize,0);
-  ret->tlist=createtokenlist(ret->gtable,ret->ttable);
+  ret->gtable=createSymboltable(gsize,ASCII_BIAS);
+  ret->ttable=createSymboltable(tsize,0);
+  ret->tlist=createTokenlist(ret->gtable,ret->ttable);
 
   return ret;
 }
 
-token* gettoken(tokenizer *worker)
+token* getToken(tokenizer *worker)
 {
   char c; //in order to use skipspace(reader,c)
   reader* reader=worker->reader;
@@ -47,15 +52,15 @@ token* gettoken(tokenizer *worker)
     if(dfainstartstate(worker->dfa))
       skipspace(worker->reader,c);
 
-    if(charhavemapper(worker,c)==0){
+    if(charHaveMapper(worker,c)==0){
       if(walkdfa(worker->dfa,c)==0){
 	int result=worker->dfa->lastend;
 	if(result==0){
-	  tokenizerfail(c);
+	  tokenizerFail(c);
 	}
 	char str[64];
 	acceptword(worker->reader,str,64);
-	ret=appendtoken(worker->tlist,str,result);
+	ret=appendToken(worker->tlist,str,result);
 	restartdfainstance(worker->dfa);
 	//printf("%s\n",str);
 	return ret;
@@ -87,18 +92,18 @@ token* gettoken(tokenizer *worker)
 	walkdfa(worker->dfa,inputrecord);
 	char str[64];
 	acceptword(worker->reader,str,64);
-	ret=appendtoken(worker->tlist,str,-canextend);
+	ret=appendToken(worker->tlist,str,-canextend);
 	restartdfainstance(worker->dfa);
 	//printf("%s\n",str);
 	return ret;
       }
-      tokenizerfail(c);
+      tokenizerFail(c);
     }
   }
   return NULL;
 }
 
-void _dotokenizer(tokenizer *worker)
+void _doTokenizer(tokenizer *worker)
 {
   char c=' ';
   reader* reader=worker->reader;
@@ -109,16 +114,16 @@ void _dotokenizer(tokenizer *worker)
     if(dfainstartstate(worker->dfa))
       skipspace(worker->reader,c);
     
-    if(charhavemapper(worker,c)==0){
+    if(charHaveMapper(worker,c)==0){
       if(walkdfa(worker->dfa,c)==0){
 	int result=worker->dfa->lastend;
 	if(result==0){ 
-	  tokenizerfail(c); //fail
+	  tokenizerFail(c); //fail
 	}
 	char str[64];
 	acceptword(worker->reader,str,64);
 	//printf("%s\n",str);
-	appendtoken(worker->tlist,str,result);
+	appendToken(worker->tlist,str,result);
 	restartdfainstance(worker->dfa);
       }
     }
@@ -153,24 +158,29 @@ void _dotokenizer(tokenizer *worker)
 	char str[64];
 	acceptword(worker->reader,str,64);
 	//printf("%s\n",str);
-	appendtoken(worker->tlist,str,-canextend);
+	appendToken(worker->tlist,str,-canextend);
 	restartdfainstance(worker->dfa);
       }
-      tokenizerfail(c);
+      tokenizerFail(c);
     }
   }
 }
 
-void printtokenlistwithname(tokenizer *tokenizer)
+void printTokenlistWithName(tokenizer *tokenizer)
 {
   printf("\n");
   token *pos;
   for_each_token(pos,(tokenizer->tlist)){
     int gindex=pos->gindex;
     int sindex=pos->sindex;
-    symbolitem *gitem=searchsymboltablebyid(tokenizer->gtable,gindex);
-    symbolitem *sitem=searchsymboltablebyid(tokenizer->ttable,sindex);
-    printf("%s %s\n",gitem->name,sitem->name);
+    if(gindex >= tokenizer->gtable->bias){
+      symbolitem *gitem=searchSymboltableById(tokenizer->gtable,gindex);
+      printf("%s ",gitem->name);
+    }
+    else
+      printf("TERMINAL ");
+    symbolitem *sitem=searchSymboltableById(tokenizer->ttable,sindex);
+    printf("%s\n",sitem->name);
     //printf("%d %d\n",gindex,sindex);
   }
 }

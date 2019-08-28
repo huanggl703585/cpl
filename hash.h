@@ -8,16 +8,16 @@
 #define GOLDEN_RATIO_32 0x61C88647
 
 unsigned int hash_generic(unsigned int val);
-unsigned int strhash(char *z);
+unsigned int strHash(char *z);
 
-unsigned int gethashindex(unsigned int inttype,char* strtype,int size);
+unsigned int getHashIndex(unsigned int inttype,char* strtype,int size);
 
 unsigned int hash_generic(unsigned int val)
 {
   return (GOLDEN_RATIO_32 * val)%UINT_MAX;
 }
 
-unsigned int strhash(char *z)
+unsigned int strHash(char *z)
 {
   unsigned int ret=0;
   char c;
@@ -28,11 +28,11 @@ unsigned int strhash(char *z)
   return ret;
 }
 
-unsigned int gethashindex(unsigned int inttype,char *strtype,int size)
+unsigned int getHashIndex(unsigned int inttype,char *strtype,int size)
 {
   unsigned int index;
   if(strtype!=NULL)
-    index=strhash(strtype)%(size);
+    index=strHash(strtype)%(size);
   else index=hash_generic((unsigned int)inttype)%(size);
   //else index=inttype%size;
   return index;

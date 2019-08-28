@@ -1,4 +1,4 @@
-start ::= token
+start ::= token ( )
       ::= preprocessing_token
 
 token ::= keyword

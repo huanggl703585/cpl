@@ -48,6 +48,7 @@ struct pbodyunit{
 
 pbodyunit *createpbodyunit();
 pbodyunit *createpbodyunitempty();
+int pbodyunitlistisempty(pbodyunit *list);
 pbodyunit *_pbodyunitcopy(pbodyunit *u);
 pbodyunit *pbodyunitcopy(pbodyunit *list,pbodyunit *end);
 pbodyunit *getunitbypbody(pbody *head,pbody *end);
@@ -91,6 +92,12 @@ pbodyunit *createpbodyunitempty()
   pbodyunit *ret=createpbodyunit();
   ret->type=P_EMPTY;
   return ret;
+}
+
+int pbodyunitlistisempty(pbodyunit *list)
+{
+  pbodyunit *next=pbodyunitnext(list);
+  return next->type==0;
 }
 
 pbodyunit *_pbodyunitcopy(pbodyunit *u)
@@ -194,7 +201,8 @@ void _printpbodyunit(pbodyunit *u)
   }
   else if(type==P_TERMINAL){
     int key=u->value.index;
-    printf("%c\n",(char)key);
+    //printf("%d\n",(char)key);
+    printf("%d\n",key);
   }
   else if(type==P_NONTERMINAL){
     int key=u->value.index;
@@ -313,8 +321,12 @@ int _pbodyunitisequal(pbodyunit *u1,pbodyunit *u2)
   int type1=u1->type,type2=u2->type;
   if(u1->type != u2->type) return 0;
 
-  if(u1->type!=P_COMBINE)
-    return (u1->value.index==u2->value.index) && u1->value.index!=0;
+  if(u1->type==P_OR || u1->type==P_EMPTY) return 1;
+  else if(u1->type==P_NONTERMINAL)
+    return (u1->value.index==u2->value.index);
+  else if(u1->type==P_TERMINAL)
+    return (u1->value.index==u2->value.index) && u1->value.index!=0; //avoid empty
+  //else u1->type==P_COMBIE
   pbodyunit *nest1=u1->value.nest;
   pbodyunit *nest2=u2->value.nest;
   return pbodyunitisequal(nest1,nest2);
