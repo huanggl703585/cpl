@@ -2,25 +2,25 @@
 
 int main()
 {
-  initslist(l,0);
-  initslist(new,0);
-  initslist(l1,4);
-  initslist(l2,5);
-  initslist(l3,6);
-  initslist(l4,7);
-  initslist(l5,8);
-  appendslist(l1,l);
-  appendslist(l2,l);
-  appendslist(l3,l);
-  appendslist(l4,new);
-  appendslist(l5,new);
+  slist_init(l,0);
+  slist_init(new,0);
+  slist_init(l1,4);
+  slist_init(l2,5);
+  slist_init(l3,6);
+  slist_init(l4,7);
+  slist_init(l5,8);
+  slist_append(l1,l);
+  slist_append(l2,l);
+  slist_append(l3,l);
+  slist_append(l4,new);
+  slist_append(l5,new);
 
-  sliststack *stack=createsliststack();
-  sliststackpush(stack,l);
-  sliststackpush(stack,new);
+  sliststack *stack=createSliststack();
+  sliststackPush(stack,l);
+  sliststackPush(stack,new);
   
   void *res;
-  while((res=sliststackpop(stack))!=NULL){
+  while((res=sliststackPop(stack))!=NULL){
     int ret=(int)(res);
     printf("%d ",ret);
   }

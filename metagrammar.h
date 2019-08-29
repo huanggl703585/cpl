@@ -5,7 +5,7 @@
 #include "production.h"
 #include "grammar.h"
 
-//#include "LL1.h"
+#include "LL1.h"
 
 //meta-grammar means that we use that grammar to read other grammar
 char *path="#cgrammer.txt";
@@ -49,85 +49,85 @@ void buildMetaLexcialGrammar()
   productionbody *pbpos;
   //token ::= identifier | equivalence | singlechar | '|' | '(' | ')'
   spos=searchSymboltableById(table,array[0]);
-  spos->attr->attr.prod=createproduction(array[0]);
+  spos->attr->attr.prod=createProduction(array[0]);
   ppos=spos->attr->attr.prod;
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[1]);
-  appendprodbodyor(pbpos);
-  appendprodbody(pbpos,array[2]);
-  appendprodbodyor(pbpos);
-  appendprodbody(pbpos,array[3]);
-  appendprodbodyor(pbpos);
-  appendprodbodyterminal(pbpos,'|');
-  appendprodbodyor(pbpos);
-  appendprodbodyterminal(pbpos,'(');
-  appendprodbodyor(pbpos);
-  appendprodbodyterminal(pbpos,')');
-  
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,array[1]);
+  appendProdbodyOr(pbpos);
+  appendProdbody(pbpos,array[2]);
+  appendProdbodyOr(pbpos);
+  appendProdbody(pbpos,array[3]);
+  appendProdbodyOr(pbpos);
+  appendProdbodyTerminal(pbpos,'|');
+  appendProdbodyOr(pbpos);
+  appendProdbodyTerminal(pbpos,'(');
+  appendProdbodyOr(pbpos);
+  appendProdbodyTerminal(pbpos,')');
+
   //identifier ::= identifier-nondigit
   //           ::= identifier identifier-nondigit
   //           ::= identifier digit
   spos=searchSymboltableById(table,array[1]);
-  ppos=spos->attr->attr.prod=createproduction(array[1]);
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[4]);
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[1]);
-  appendprodbody(pbpos,array[4]);
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[1]);
-  appendprodbody(pbpos,array[5]);
+  ppos=spos->attr->attr.prod=createProduction(array[1]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,array[4]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,array[1]);
+  appendProdbody(pbpos,array[4]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,array[1]);
+  appendProdbody(pbpos,array[5]);
 
   //terminal ::= alpha | digit
   spos=searchSymboltableById(table,array[2]);
-  ppos=spos->attr->attr.prod=createproduction(array[2]);
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[5]);
-  appendprodbodyor(pbpos);
-  appendprodbody(pbpos,array[6]);
+  ppos=spos->attr->attr.prod=createProduction(array[2]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,array[5]);
+  appendProdbodyOr(pbpos);
+  appendProdbody(pbpos,array[6]);
 
   //equivalence ::= ':' ':' '='
   spos=searchSymboltableById(table,array[3]);
-  ppos=spos->attr->attr.prod=createproduction(array[3]);
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbodyterminal(pbpos,':');
-  appendprodbodyterminal(pbpos,':');
-  appendprodbodyterminal(pbpos,'=');
+  ppos=spos->attr->attr.prod=createProduction(array[3]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbodyTerminal(pbpos,':');
+  appendProdbodyTerminal(pbpos,':');
+  appendProdbodyTerminal(pbpos,'=');
 
   //identifier-nondigit ::= '_' | alpha
   //when in debug: identifier-nondigit ::= ( '_' | alpha )
   spos=searchSymboltableById(table,array[4]);
-  ppos=spos->attr->attr.prod=createproduction(array[4]);
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,'(');
-  appendprodbodyterminal(pbpos,'_');
-  appendprodbodyor(pbpos);
-  appendprodbody(pbpos,array[6]);
-  appendprodbody(pbpos,')');
+  ppos=spos->attr->attr.prod=createProduction(array[4]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,'(');
+  appendProdbodyTerminal(pbpos,'_');
+  appendProdbodyOr(pbpos);
+  appendProdbody(pbpos,array[6]);
+  appendProdbody(pbpos,')');
 
   //digit
   spos=searchSymboltableById(table,array[5]);
-  ppos=spos->attr->attr.prod=createproduction(array[5]);
-  appendprodrange(ppos,'0','9');
+  ppos=spos->attr->attr.prod=createProduction(array[5]);
+  appendProdRange(ppos,'0','9');
   
   //alpha
   spos=searchSymboltableById(table,array[6]);
-  ppos=spos->attr->attr.prod=createproduction(array[6]);
-  appendprodrange(ppos,'a','z');
-  appendprodrange(ppos,'A','Z');
+  ppos=spos->attr->attr.prod=createProduction(array[6]);
+  appendProdRange(ppos,'a','z');
+  appendProdRange(ppos,'A','Z');
 
   reformLexcialProduction(table);
-  //printtablepunit(table);
+  //printTablePunit(table);
   
   re_node *tree=symboltableBuildRetree(table,table->bias);
   //printretree(tree);
   dfa *dfa=createdfa(tree,tree->nodenum);
   //printdfa(dfa);
-  tokenizer *tokenizer=createTokenizer(path,1024,1024);
-  tokenizer->gtable=table;
-  tokenizer->dfa=createdfainstance(dfa);
+  //tokenizer *tokenizer=createTokenizer(path,1024,1024);
+  //tokenizer->gtable=table;
+  //tokenizer->dfa=createdfainstance(dfa);
   
-  _doTokenizer(tokenizer);
+  //_doTokenizer(tokenizer);
   //token *ttmp;
   //while((ttmp=gettoken(tokenizer))!=NULL)
   //  ;
@@ -164,60 +164,62 @@ void  buildMetaStructualGrammar()
   //start ::= production
   //      ::= start production
   spos=searchSymboltableById(table,array[0]);
-  spos->attr->attr.prod=createproduction(array[0]);
+  spos->attr->attr.prod=createProduction(array[0]);
   ppos=spos->attr->attr.prod;
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[0]);
-  appendprodbody(pbpos,array[1]);
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[1]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,array[0]);
+  appendProdbody(pbpos,array[1]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,array[1]);
 
   //production ::= head equivalence body
   spos=searchSymboltableById(table,array[1]);
-  spos->attr->attr.prod=createproduction(array[1]);
+  spos->attr->attr.prod=createProduction(array[1]);
   ppos=spos->attr->attr.prod;
-  pbpos=createprodbodylinkprod(ppos);
-  appendprodbody(pbpos,array[2]);
+  pbpos=createProdbodyLinkProd(ppos);
+  appendProdbody(pbpos,array[2]);
   appendProdbodyByName(table,pbpos,"equivalence");
-  appendprodbody(pbpos,array[3]);
+  appendProdbody(pbpos,array[3]);
   
   
   //head ::= identifier
   spos=searchSymboltableById(table,array[2]);
-  spos->attr->attr.prod=createproduction(array[2]);
+  spos->attr->attr.prod=createProduction(array[2]);
   ppos=spos->attr->attr.prod;
-  pbpos=createprodbodylinkprod(ppos);
+  pbpos=createProdbodyLinkProd(ppos);
   appendProdbodyByName(table,pbpos,"identifier");
   
   
   //body ::= token body
   //     ::= token
   spos=searchSymboltableById(table,array[3]);
-  spos->attr->attr.prod=createproduction(array[3]);
+  spos->attr->attr.prod=createProduction(array[3]);
   ppos=spos->attr->attr.prod;
-  pbpos=createprodbodylinkprod(ppos);
+  pbpos=createProdbodyLinkProd(ppos);
   appendProdbodyByName(table,pbpos,"token");
-  appendprodbody(pbpos,array[3]);
-  pbpos=createprodbodylinkprod(ppos);
+  appendProdbody(pbpos,array[3]);
+  pbpos=createProdbodyLinkProd(ppos);
   appendProdbodyByName(table,pbpos,"token");
 
   int srcid=meta_lexcial_grammar.start;
   int dstid=intkvpairfind(map,srcid);
   spos=searchSymboltableById(table,dstid);
-  spos->attr->attr.prod=createproduction(dstid);
+  spos->attr->attr.prod=createProduction(dstid);
   ppos=spos->attr->attr.prod;
-  pbpos=createprodbodylinkprod(ppos);
+  pbpos=createProdbodyLinkProd(ppos);
   kvpair *kvpos;
   //printf("%d %d\n",srcid,dstid);
   for_each_kvpair(kvpos,map){
     if((int)(kvpos->value)==dstid) continue;
-    appendprodbody(pbpos,(int)(kvpos->value));
+    appendProdbody(pbpos,(int)(kvpos->value));
     //printf("%d ",(int)(kvpos->value));
   }
 
   //printSymboltable(table,0);
   reformStructualProduction(table);
   //printProductionWithName(table,0);
+  
+  buildFirst(table);
 }
 
 //return a map from src(key) to dst(value)

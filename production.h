@@ -20,30 +20,30 @@ struct productionbody{
 #define prod_for_each_prodbody(pbpos,prod)			\
   list_for_each_entry(pbpos,&(prod->productionbody->list),list)
 
-#define prodbodyfirst(prodbody)					\
+#define prodbodyFirst(prodbody)					\
   list_first_entry(&(prodbody->list),productionbody,list)
 
-#define prodbodyfirstpbody(prodbody)			\
+#define prodbodyFirstPbody(prodbody)			\
   list_first_entry(&(prodbody->body->list),pbody,list)
 
-#define prodbodynext(prodbody)			\
+#define prodbodyNext(prodbody)			\
   list_next_entry(prodbody,list)
 
-#define appendprodbody(prodbody,elem)	\
-  _appendprodbody(prodbody,elem);		\
+#define appendProdbody(prodbody,elem)	\
+  _appendProdbody(prodbody,elem);		\
   prodbody->cnt++
 
-#define appendprodbodyor(prodbody)		\
-  appendprodbody(prodbody,'|')
+#define appendProdbodyOr(prodbody)		\
+  appendProdbody(prodbody,'|')
 
-#define appendprodbodyterminal(prodbody,elem)	\
-  _appendprodbody(prodbody,'\'');			\
-  _appendprodbody(prodbody,elem);			\
-  _appendprodbody(prodbody,'\'');			\
+#define appendProdbodyTerminal(prodbody,elem)	\
+  _appendProdbody(prodbody,'\'');			\
+  _appendProdbody(prodbody,elem);			\
+  _appendProdbody(prodbody,'\'');			\
   prodbody->cnt++
 
-#define _appendprodbody(prodbody,elem)		\
-  appendpbody(prodbody->body,elem)
+#define _appendProdbody(prodbody,elem)		\
+  appendPbody(prodbody->body,elem)
 
 typedef struct production production;
 struct production{
@@ -53,141 +53,150 @@ struct production{
   productionbody *productionbody;
 };
 
-#define productionappend(prod,prodbody)				\
+#define productionAppend(prod,prodbody)				\
   listaddtail(&(prodbody->list),&(prod->productionbody->list));	\
   prod->cnt++
 
-#define productiondrop(prod,prodbody)		\
+#define productionDrop(prod,prodbody)		\
   listdrop(&(prodbody->list));			\
   prod->cnt--
 
-#define appendprodrange(prod,lower,upper)				\
+#define appendProdRange(prod,lower,upper)				\
   do{									\
     for(int __i=lower;__i<=upper;__i++){				\
-      productionbody *__pbpos=createprodbodylinkprod(prod);		\
-      appendprodbodyterminal(__pbpos,__i);				\
+      productionbody *__pbpos=createProdbodyLinkProd(prod);	\
+      appendProdbodyTerminal(__pbpos,__i);				\
     }									\
   }while(0)
 
-productionbody *createprodbody();
-productionbody *createprodbodylinkprod(production *prod);
-production *createproduction(int head);
-productionbody *pbodyunitcreateprodbody(pbodyunit *u);
-void prodbodyappendpbodyunitlist(productionbody *prodbody,pbodyunit *start);
-void prodbodyappendpbodyunit(productionbody *prodbody,pbodyunit *u);
+productionbody *createProdbody();
+productionbody *createProdbodyLinkProd(production *prod);
+production *createProduction(int head);
+productionbody *pbodyunitCreateProdbody(pbodyunit *u);
+void prodAppendEmptyProdbody(production *prod);
+void prodbodyAppendPbodyunitList(productionbody *prodbody,pbodyunit *start);
+void prodbodyAppendPbodyunit(productionbody *prodbody,pbodyunit *u);
 
-productionbody *createprodbody()
+productionbody *createProdbody()
 {
   productionbody *ret=(productionbody*)malloc(sizeof(productionbody));
-  createpbody((ret->body));
+  createPbody((ret->body));
   list_init(ret->list);
   ret->cnt=0;
-  ret->unit=createpbodyunit();
+  ret->unit=createPbodyunit();
   return ret;
 }
 
-productionbody *createprodbodylinkprod(production *prod)
+productionbody *createProdbodyLinkProd(production *prod)
 {
-  productionbody *ret=createprodbody();
-  productionappend(prod,ret);
+  productionbody *ret=createProdbody();
+  productionAppend(prod,ret);
   return ret;
 }
 
-production *createproduction(int head)
+production *createProduction(int head)
 {
   production *ret=(production*)malloc(sizeof(production));
   ret->head=head;
-  ret->productionbody=createprodbody();
+  ret->productionbody=createProdbody();
   ret->cnt=0;
-  //ret->unit=createpbodyunit();
+  //ret->unit=createPbodyunit();
   return ret;
 }
 
-productionbody *pbodyunitcreateprodbody(pbodyunit *u)
+productionbody *pbodyunitCreateProdbody(pbodyunit *u)
 {
-  productionbody *ret=createprodbody();
+  productionbody *ret=createProdbody();
   ret->unit=u;
   return ret;
 }
 
+void prodAppendEmptyProdbody(production *prod)
+{
+  productionbody *emptypb=createProdbodyLinkProd(prod);
+  pbodyunit *empty=createPbodyunitEmpty();
+  prodbodyAppendPbodyunit(emptypb,empty);
+}
+
 //range: (start,0)
-void prodbodyappendpbodyunitlist(productionbody *prodbody,pbodyunit *start)
+void prodbodyAppendPbodyunitList(productionbody *prodbody,pbodyunit *start)
 {
   pbodyunit *listhead=prodbody->unit;
   int cnt=0;
-  for(pbodyunit *pos=pbodyunitnext(start);pos->type!=0;pos=pbodyunitnext(pos)){
-    pbodyunit *copy=_pbodyunitcopy(pos);
-    pbodyunitappend(copy,listhead);
+  for(pbodyunit *pos=pbodyunitNext(start);pos->type!=0;pos=pbodyunitNext(pos)){
+    pbodyunit *copy=_pbodyunitCopy(pos);
+    pbodyunitAppend(copy,listhead);
     cnt++;
   }
   prodbody->cnt=cnt;
 }
 
-void prodbodyappendpbodyunit(productionbody *prodbody,pbodyunit *u)
+void prodbodyAppendPbodyunit(productionbody *prodbody,pbodyunit *u)
 {
   pbodyunit *listhead=prodbody->unit;
-  pbodyunit *copy=_pbodyunitcopy(u);
-  pbodyunitappend(copy,listhead);
+  pbodyunit *copy=_pbodyunitCopy(u);
+  pbodyunitAppend(copy,listhead);
   prodbody->cnt++;
 }
 
 //=====================================
 //20190812 FINISH
-void prodbodypbodytounit(productionbody *prodbody);
-void prodelimateparenthese(production *prod);
-void _doprodelimateor(production* prod,productionbody *prodbody);
-void prodelimateor(production *prod);
+void prodbodyPbodyToUnit(productionbody *prodbody);
+void prodElimateParenthese(production *prod);
+void _doProdElimateOr(production* prod,productionbody *prodbody);
+void prodElimateOr(production *prod);
 
-void prodbodypbodytounit(productionbody *prodbody)
+void prodbodyPbodyToUnit(productionbody *prodbody)
 {
   pbody *head=prodbody->body;
-  pbodyunit *res=getunitbypbody(head,head);
+  pbodyunit *res=getUnitByPbody(head,head);
+  //printPbodyunit(res);
   prodbody->unit=res;
 }
 
-void prodelimateparenthese(production *prod)
+void prodElimateParenthese(production *prod)
 {
   productionbody *pbpos;
   prod_for_each_prodbody(pbpos,prod){
-    pbodyunitelimateparenthese(pbpos->unit);
+    pbodyunitElimateParenthese(pbpos->unit);
   }
 }
 
-void _doprodelimateor(production* prod,productionbody *prodbody)
+void _doProdElimateOr(production* prod,productionbody *prodbody)
 {
   pbodyunit *u=prodbody->unit;
-  pbodyunit *iterone=pbodyunitnext(u);
-  pbodyunit *itertwo=pbodyunitnext(iterone);
+  pbodyunit *iterone=pbodyunitNext(u);
+  pbodyunit *itertwo=pbodyunitNext(iterone);
   pbodyunit *tmpiterone=iterone,*tmpitertwo=itertwo;
 
   do{
     iterone=tmpiterone;
     itertwo=tmpitertwo;
 
-    productionbody *newprodbody=createprodbodylinkprod(prod);
-    prodbodyappendpbodyunit(newprodbody,iterone);
+    productionbody *newprodbody=createProdbodyLinkProd(prod);
+    prodbodyAppendPbodyunit(newprodbody,iterone);
 
-    tmpiterone=pbodyunitnext(itertwo);
-    tmpitertwo=pbodyunitnext(tmpiterone);
+    tmpiterone=pbodyunitNext(itertwo);
+    tmpitertwo=pbodyunitNext(tmpiterone);
   }while(itertwo!=u);
-  productiondrop(prod,prodbody);
+  productionDrop(prod,prodbody);
 }
 
-void prodelimateor(production *prod)
+void prodElimateOr(production *prod)
 {
   productionbody *pbpos;
   prod_for_each_prodbody(pbpos,prod){
     pbodyunit *u=pbpos->unit;
-    if(_testpbodyunitelimateor(u))
-      _doprodelimateor(prod,pbpos);
+    if(_testPbodyunitElimateOr(u))
+      _doProdElimateOr(prod,pbpos);
   }
 }
 
 //====================re_node
-void prodbuildretree(production *prod);
-void prodbodybuildretree(productionbody *prodbody);
+void prodBuildRetree(production *prod);
+void prodbodyBuildRetree(productionbody *prodbody);
 
-void prodbuildretree(production *prod)
+void prodBuildRetree(production *prod)
 {
   int head=prod->head;
   int size=prod->cnt;
@@ -195,7 +204,7 @@ void prodbuildretree(production *prod)
   int pt=0;
   productionbody *pbpos;
   prod_for_each_prodbody(pbpos,prod){
-    prodbodybuildretree(pbpos);
+    prodbodyBuildRetree(pbpos);
     retreearr[pt++]=pbpos->retree;
   }
   
@@ -218,9 +227,9 @@ void prodbuildretree(production *prod)
   //printf("\n");
 }
 
-void prodbodybuildretree(productionbody *prodbody)
+void prodbodyBuildRetree(productionbody *prodbody)
 {
-  prodbody->retree=pbodyunitbuildretree(prodbody->unit);
+  prodbody->retree=pbodyunitBuildRetree(prodbody->unit);
   //printretree(prodbody->retree);
   //printf("\n");
 }
@@ -235,7 +244,7 @@ void printproduction(production *prod)
   list_for_each_entry(pbpos,&(prod->productionbody->list),list){
     printf("body ");
     pbody *tmp=pbpos->body;
-    printslist(tmp);
+    slist_print(tmp);
   } 
 }
 #endif

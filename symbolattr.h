@@ -43,7 +43,7 @@ symbolattr *createSymbolAttr(int id);
 symbolattr *createSymbolAttr(int id)
 {
   symbolattr *ret=(symbolattr*)malloc(sizeof(symbolattr));
-  ret->attr.prod=createproduction(id);
+  ret->attr.prod=createProduction(id);
   return ret;
 }
 
@@ -59,7 +59,7 @@ void _prodInUnit(symbolattr *attr)
   production *prod=attr->attr.prod;
   productionbody *pbpos;
   prod_for_each_prodbody(pbpos,prod){
-    prodbodypbodytounit(pbpos);
+    prodbodyPbodyToUnit(pbpos);
   }
 }
 
@@ -70,19 +70,19 @@ void _printTableUnit(symbolattr *attr)
   productionbody *pbpos;
   prod_for_each_prodbody(pbpos,prod){
     pbodyunit *unit=pbpos->unit;
-    printpbodyunit(unit);
+    printPbodyunit(unit);
     printf("\n");
   }
 }
 
 void _elimateParenthese(symbolattr *attr)
 {
-  prodelimateparenthese(attr->attr.prod);
+  prodElimateParenthese(attr->attr.prod);
 }
 
 void _elimateOr(symbolattr *attr)
 {
-  prodelimateor(attr->attr.prod);
+  prodElimateOr(attr->attr.prod);
 }
 
 //========================symbol type
@@ -96,7 +96,7 @@ void _symbolSetType(symbolattr *attr)
   int isterminalset=1;
   prod_for_each_prodbody(pbpos,prod){
     pbodyunit *list=pbpos->unit;
-    int res=pbodyunitlisttype(list);
+    int res=pbodyunitListType(list);
     if(isterminalset==1 && res!=2)
       isterminalset=0;
     if(res==1){
@@ -134,7 +134,7 @@ void _symboltableBuildRetree(symbolattr *attr)
 {
   production *prod=attr->attr.prod;
   if(attr->type!=S_TERMINALSET)
-    prodbuildretree(prod);
+    prodBuildRetree(prod);
   else
     prod->retree=createrenode(RE_OPERAND,prod->head);
 }

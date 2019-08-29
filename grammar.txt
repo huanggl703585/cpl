@@ -44,3 +44,26 @@ bias 7
 1 production
 2 head
 3 body
+
+//=============after
+
+token ::= identifier
+      ::= terminal
+      ::= equivalence
+      ::= |
+      ::= (
+      ::= )
+
+start ::= production _start
+
+production ::= head equivalence body
+
+head ::= identifier
+
+body ::= token _body
+
+_body ::= body 
+      ::= empty
+
+_start ::= production _start
+       ::= empty

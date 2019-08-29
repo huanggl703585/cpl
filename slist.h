@@ -17,18 +17,18 @@ struct slist{
 #define slist_drop(listentry)			\
   listdrop(&(listentry->list))
 
-#define appendslist(new,chain)			\
+#define slist_append(new,chain)			\
   listaddtail(&(((slist*)new)->list),&(((slist*)chain)->list))
 
 #define slist_insert_order(slisthead,newnode,cmpfunc)	\
   list_insert_order(slisthead,list,key,newnode,cmpfunc)
 
-#define initslist(name,_key)			\
+#define slist_init(name,_key)			\
   slist *name=(slist*)malloc(sizeof(slist));	\
   name->key=(void*)_key;			\
   list_init(name->list)
 
-#define printslist(listhead)			\
+#define slist_print(listhead)				\
   do{							\
     slist* pos;				\
     list_for_each_entry(pos,&(((slist*)listhead)->list),list){ \
@@ -41,6 +41,6 @@ struct slist{
   list_for_each_entry(pos,&(listhead->list),list)
 
 //slist1 is origin to be replaced, slist2 is new list
-#define slistreplace(slist1,slist2)		\
+#define slist_replace(slist1,slist2)		\
   listreplace(&(slist1->list),&(slist2->list))
 #endif

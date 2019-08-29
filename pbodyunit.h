@@ -11,6 +11,10 @@
 #define P_OR          4  // |
 #define P_EMPTY       5
 
+//used for structual grammar
+#define P_LEFT        6
+#define P_RIGHT       7
+
 typedef struct pbodyunit pbodyunit;
 struct pbodyunit{
   pbody *body;
@@ -25,60 +29,66 @@ struct pbodyunit{
 #define for_each_pbodyunit(pos,listhead)	\
   list_for_each_entry(pos,&(listhead->list),list)
 
-#define pbodyunitappend(newlist,listhead)			\
+#define pbodyunitAppend(newlist,listhead)			\
   listaddtail(&(newlist->list),&(listhead->list))
 
-#define pbodyunitinsert(newlist,pos)		\
+#define pbodyunitAdd(new,pos)			\
+  listadd(&(new->list),&(pos->list))
+
+#define pbodyunitInsert(newlist,pos)		\
   listadd(&(newlist->list),&(pos->list))
 
-#define pbodyunitdrop(pos)			\
+#define pbodyunitDrop(pos)			\
   listdrop(&(pos->list))
 
-#define pbodyunitprev(pos)			\
+#define pbodyunitPrev(pos)			\
   list_prev_entry(pos,list)			
 
-#define pbodyunitnext(pos)			\
+#define pbodyunitNext(pos)			\
   list_next_entry(pos,list)
 
-#define pbodyunitishead(pos)			\
+#define pbodyunitIsHead(pos)			\
   (pos->type==0)
 
-#define pbodyunitreplace(newhead,replacedpos)	\
+#define pbodyunitReplace(newhead,replacedpos)	\
   listreplace(&(newhead->list),&(replacedpos->list))
 
-pbodyunit *createpbodyunit();
-pbodyunit *createpbodyunitempty();
-int pbodyunitlistisempty(pbodyunit *list);
-pbodyunit *_pbodyunitcopy(pbodyunit *u);
-pbodyunit *pbodyunitcopy(pbodyunit *list,pbodyunit *end);
-pbodyunit *getunitbypbody(pbody *head,pbody *end);
-pbodyunit *_getunitbypbody(pbody *head,pbody *end,pbody **newhead);
+pbodyunit *createPbodyunit();
+pbodyunit *createPbodyunitEmpty();
+int pbodyunitListIsEmpty(pbodyunit *list);
+pbodyunit *_pbodyunitCopy(pbodyunit *u);
+pbodyunit *pbodyunitCopy(pbodyunit *list,pbodyunit *end);
+pbodyunit *getUnitByPbody(pbody *head,pbody *end);
+pbodyunit *_getUnitByPbody(pbody *head,pbody *end,pbody **newhead);
 
-void printpbodyunittype(int type);
-void _printpbodyunit(pbodyunit *u);
-void printpbodyunit(pbodyunit *listhead);
+void printPbodyunitType(int type);
+void _printPbodyunit(pbodyunit *u);
+void printPbodyunit(pbodyunit *listhead);
 
-int pcombinehasor(pbodyunit *pos);
-int pcombinehasalign(pbodyunit *pos);
-void pcombineresolve(pbodyunit *pos);
-int _pbodyunitelimateparenthese(pbodyunit *pos);
-void pbodyunitelimateparenthese(pbodyunit *listhead);
+int pcombineHasOr(pbodyunit *pos);
+int pcombineHasAlign(pbodyunit *pos);
+void pcombineResolve(pbodyunit *pos);
+int _pbodyunitElimateParenthese(pbodyunit *pos);
+void pbodyunitElimateParenthese(pbodyunit *listhead);
 
-int _testpbodyunitelimateor(pbodyunit *listhead);
+int _testPbodyunitElimateOr(pbodyunit *listhead);
 
-int _pbodyunitisequal(pbodyunit *u1,pbodyunit *u2);
-int pbodyunitisequal(pbodyunit *list1,pbodyunit *list2);
-int pbodyunitfindlcp(pbodyunit **unitarr,int mark[],int size,pbodyunit **head,int *headindex);
+int _pbodyunitIsEqual(pbodyunit *u1,pbodyunit *u2);
+int pbodyunitIsEqual(pbodyunit *list1,pbodyunit *list2);
+int pbodyunitFindLcp(pbodyunit **unitarr,int mark[],int size,pbodyunit **head,int *headindex);
 
-int pbodyunitfindleftrecursion(pbodyunit **unitarr,int mark[],int size,int head);
+int pbodyunitFindLeftRecursion(pbodyunit **unitarr,int mark[],int size,int head);
 
-int pbodyunitlisttype(pbodyunit *list); 
+int pbodyunitListType(pbodyunit *list); 
 
 #include "re_node.h"
-re_node *pbodyunitbuildrenode(pbodyunit *u);
-re_node *pbodyunitbuildretree(pbodyunit *list);
+re_node *pbodyunitBuildRenode(pbodyunit *u);
+re_node *pbodyunitBuildRetree(pbodyunit *list);
 
-pbodyunit *createpbodyunit()
+void pbodyunitAddParenthese(pbodyunit *list);
+void elimatePbodyunitNest(pbodyunit *list);
+
+pbodyunit *createPbodyunit()
 {
   pbodyunit *ret=(pbodyunit*)malloc(sizeof(pbodyunit));
   list_init(ret->list);
@@ -87,67 +97,67 @@ pbodyunit *createpbodyunit()
   return ret;
 }
 
-pbodyunit *createpbodyunitempty()
+pbodyunit *createPbodyunitEmpty()
 {
-  pbodyunit *ret=createpbodyunit();
+  pbodyunit *ret=createPbodyunit();
   ret->type=P_EMPTY;
   return ret;
 }
 
-int pbodyunitlistisempty(pbodyunit *list)
+int pbodyunitListIsEmpty(pbodyunit *list)
 {
-  pbodyunit *next=pbodyunitnext(list);
+  pbodyunit *next=pbodyunitNext(list);
   return next->type==0;
 }
 
-pbodyunit *_pbodyunitcopy(pbodyunit *u)
+pbodyunit *_pbodyunitCopy(pbodyunit *u)
 {
-  pbodyunit *ret=createpbodyunit();
+  pbodyunit *ret=createPbodyunit();
   ret->type=u->type;
   ret->value.index=u->value.index;
   if(u->type==P_COMBINE)
-    ret->value.nest=pbodyunitcopy(u->value.nest,u->value.nest);
+    ret->value.nest=pbodyunitCopy(u->value.nest,u->value.nest);
       
   return ret;
 }
 
 //range:(list,end]
-pbodyunit *pbodyunitcopy(pbodyunit *list,pbodyunit *end)
+pbodyunit *pbodyunitCopy(pbodyunit *list,pbodyunit *end)
 {
-  pbodyunit *ret=createpbodyunit();
+  pbodyunit *ret=createPbodyunit();
   pbodyunit *pos;
-  for(pbodyunit *pos=pbodyunitnext(list);;pos=pbodyunitnext(pos)){
-    pbodyunit *copyright=_pbodyunitcopy(pos);
-    pbodyunitappend(copyright,ret);
+  for(pbodyunit *pos=pbodyunitNext(list);;pos=pbodyunitNext(pos)){
+    pbodyunit *copyright=_pbodyunitCopy(pos);
+    pbodyunitAppend(copyright,ret);
     if(pos==end) break;
   }
   return ret;
 }
 
-pbodyunit *getunitbypbody(pbody *head,pbody *end)
+pbodyunit *getUnitByPbody(pbody *head,pbody *end)
 {
-  pbodyunit *rethead=createpbodyunit();
+  pbodyunit *rethead=createPbodyunit();
   pbody *pos=head;
   pbody *posnext;
   
-  while((posnext=getpbodynext(pos))!=end){
-    pbodyunit *newunit=_getunitbypbody(pos,end,&pos);
-    pbodyunitappend(newunit,rethead);
+  while((posnext=getPbodyNext(pos))!=end){
+    pbodyunit *newunit=_getUnitByPbody(pos,end,&pos);
+    pbodyunitAppend(newunit,rethead);
   }
   return rethead;
 }
 
 //deal with a pbody, while pbodygetunit deal with the list of pbody
 //newhead is the tail of pbodyunit, for example, ' a ' -> newhead== ' 
-pbodyunit *_getunitbypbody(pbody *head,pbody *end,pbody **newhead)
+pbodyunit *_getUnitByPbody(pbody *head,pbody *end,pbody **newhead)
 {
-  pbodyunit *ret=createpbodyunit();
+  pbodyunit *ret=createPbodyunit();
   ret->type=P_NONTERMINAL;
   ret->body=head;
 
-  pbody *pos=getpbodynext(head);
+  pbody *pos=getPbodyNext(head);
   if(pos==end) return NULL;
-  int key=getpbodykey(pos);
+  int key=getPbodyKey(pos);
   ret->value.index=key;
   //we assume correct input, there are 4 cases:
   //1. is '|', then this is a or operator
@@ -160,19 +170,19 @@ pbodyunit *_getunitbypbody(pbody *head,pbody *end,pbody **newhead)
   else if(key=='('){
     pbody *poshead=pos;
     while(key!=')'){
-      pos=getpbodynext(pos);
+      pos=getPbodyNext(pos);
       if(pos==end) return NULL;
-      key=getpbodykey(pos);
+      key=getPbodyKey(pos);
       ret->type=P_COMBINE;
     }
     pbody* postail=pos;
-    ret->value.nest=getunitbypbody(poshead,postail);
+    ret->value.nest=getUnitByPbody(poshead,postail);
   }
   else if(key=='\''){
-    pos=getpbodynext(pos);
+    pos=getPbodyNext(pos);
     if(pos==end) return NULL;
-    int key=getpbodykey(pos);
-    pos=getpbodynext(pos);
+    int key=getPbodyKey(pos);
+    pos=getPbodyNext(pos);
     if(pos==end) return NULL;
     ret->value.index=key;
     ret->type=P_TERMINAL;
@@ -181,22 +191,24 @@ pbodyunit *_getunitbypbody(pbody *head,pbody *end,pbody **newhead)
   return ret;
 }
 
-void printpbodyunittype(int type)
+void printPbodyunitType(int type)
 {
   switch(type){
   case P_TERMINAL:{printf("TERMINAL\t");break;}
   case P_NONTERMINAL:{printf("NONTERMINAL\t");break;}
   case P_COMBINE:{printf("P_COMBINE\t");break;}
   case P_OR:{printf("OR\t");break;}
-  case P_EMPTY:{printf("EMPTY \t");break;}
+  case P_EMPTY:{printf("EMPTY\t");break;}
+  case P_LEFT: {printf("LEFTPARENTHESE\t");break;}
+  case P_RIGHT:{printf("RIGHTPARENTHESE\t");break;}
   }
 }
 
-void _printpbodyunit(pbodyunit *u)
+void _printPbodyunit(pbodyunit *u)
 {
   int type=u->type;
-  printpbodyunittype(type);
-  if(type==P_OR){
+  printPbodyunitType(type);
+  if(type==P_OR || type==P_EMPTY){
     printf("\n");
   }
   else if(type==P_TERMINAL){
@@ -211,19 +223,19 @@ void _printpbodyunit(pbodyunit *u)
   else if(type==P_COMBINE){
     pbodyunit *next=u->value.nest;
     printf("\n");
-    printpbodyunit(next);
+    printPbodyunit(next);
   }
 }
 
-void printpbodyunit(pbodyunit *listhead)
+void printPbodyunit(pbodyunit *listhead)
 {
   pbodyunit *pos;
   for_each_pbodyunit(pos,listhead){
-    _printpbodyunit(pos);
+    _printPbodyunit(pos);
   }
 }
 
-int pcombinehasor(pbodyunit *pos)
+int pcombineHasOr(pbodyunit *pos)
 {
   pbodyunit *nestlist=pos->value.nest;
   pbodyunit *ppos;
@@ -234,29 +246,29 @@ int pcombinehasor(pbodyunit *pos)
   return 0;
 }
 
-int pcombinehasalign(pbodyunit *pos)
+int pcombineHasAlign(pbodyunit *pos)
 {  
-  pbodyunit *prev=pbodyunitprev(pos);
-  pbodyunit *next=pbodyunitnext(pos);
-  return !((pbodyunitishead(prev) && pbodyunitishead(next)));
+  pbodyunit *prev=pbodyunitPrev(pos);
+  pbodyunit *next=pbodyunitNext(pos);
+  return !((pbodyunitIsHead(prev) && pbodyunitIsHead(next)));
 }
 
-void pcombineresolve(pbodyunit *pos)
+void pcombineResolve(pbodyunit *pos)
 {
   pbodyunit *head=pos->value.nest;
-  //pbodyunit *listhead=pbodyunitprev(pos);
-  pbodyunitreplace(head,pos);
+  //pbodyunit *listhead=pbodyunitPrev(pos);
+  pbodyunitReplace(head,pos);
   //pbodyunit *ppos;
   //for_each_pbodyunit(ppos,listhead){
   //  printf("%d ",ppos->value.index);
   //}
 }
 
-//test if a pcombine should be resolved and if true do pcombineresolve
+//test if a pcombine should be resolved and if true do pcombineResolve
 //in a recursion way <- now I can't complete it
 //false condition : nest has no less than two member 
 //               && is a operand of 'or'
-int _pbodyunitelimateparenthese(pbodyunit *pos)
+int _pbodyunitElimateParenthese(pbodyunit *pos)
 {
   int res=0;
   int alignor=0;
@@ -272,19 +284,19 @@ int _pbodyunitelimateparenthese(pbodyunit *pos)
   }
   if(enoughmember==0) return 0;
   
-  pbodyunit *next=pbodyunitnext(pos);
-  pbodyunit *prev=pbodyunitprev(pos);
+  pbodyunit *next=pbodyunitNext(pos);
+  pbodyunit *prev=pbodyunitPrev(pos);
   if(next->type==P_OR || prev->type==P_OR)
     alignor=1;
   else 
     return 0;
   
-  pcombineresolve(pos);
+  pcombineResolve(pos);
   //pbodyelimateparenthese(pos->body);	
   return 1;
 }
 
-void pbodyunitelimateparenthese(pbodyunit *listhead)
+void pbodyunitElimateParenthese(pbodyunit *listhead)
 {
   pbodyunit *pos;
   int flag=1;
@@ -292,7 +304,7 @@ void pbodyunitelimateparenthese(pbodyunit *listhead)
     flag=0;
     for_each_pbodyunit(pos,listhead){
       if(pos->type==P_COMBINE){
-	int tmp=_pbodyunitelimateparenthese(pos);
+	int tmp=_pbodyunitElimateParenthese(pos);
 	if(flag==0 && tmp!=0) flag=1;
       }
     }
@@ -301,22 +313,22 @@ void pbodyunitelimateparenthese(pbodyunit *listhead)
 
 //do check, check if the pbodyunit list can do elimate or
 //rule : between every 'or' and begin&end, there is just one operands
-int _testpbodyunitelimateor(pbodyunit *listhead)
+int _testPbodyunitElimateOr(pbodyunit *listhead)
 {
-  pbodyunit *iterone=pbodyunitnext(listhead);
-  pbodyunit *itersec=pbodyunitnext(iterone);
+  pbodyunit *iterone=pbodyunitNext(listhead);
+  pbodyunit *itersec=pbodyunitNext(iterone);
   if(listhead==itersec || listhead==iterone) return 0;
   while(itersec!=listhead){
     if(itersec->type != P_OR)
       return 0;
-    iterone=pbodyunitnext(itersec);
-    itersec=pbodyunitnext(iterone);
+    iterone=pbodyunitNext(itersec);
+    itersec=pbodyunitNext(iterone);
   }
   return 1;
 }
 
 //compare two single pbodyunit
-int _pbodyunitisequal(pbodyunit *u1,pbodyunit *u2)
+int _pbodyunitIsEqual(pbodyunit *u1,pbodyunit *u2)
 {
   int type1=u1->type,type2=u2->type;
   if(u1->type != u2->type) return 0;
@@ -329,26 +341,26 @@ int _pbodyunitisequal(pbodyunit *u1,pbodyunit *u2)
   //else u1->type==P_COMBIE
   pbodyunit *nest1=u1->value.nest;
   pbodyunit *nest2=u2->value.nest;
-  return pbodyunitisequal(nest1,nest2);
+  return pbodyunitIsEqual(nest1,nest2);
 }
 
-int pbodyunitisequal(pbodyunit *list1,pbodyunit *list2)
+int pbodyunitIsEqual(pbodyunit *list1,pbodyunit *list2)
 {
-  for(pbodyunit *pos1=pbodyunitnext(list1),*pos2=pbodyunitnext(list2);
+  for(pbodyunit *pos1=pbodyunitNext(list1),*pos2=pbodyunitNext(list2);
       pos1!=list1 || pos2!=list2;
-      pos1=pbodyunitnext(pos1),pos2=pbodyunitnext(pos2)){
-    if(_pbodyunitisequal(pos1,pos2)==0)
+      pos1=pbodyunitNext(pos1),pos2=pbodyunitNext(pos2)){
+    if(_pbodyunitIsEqual(pos1,pos2)==0)
       return 0;
   }
   return 1;
 }
 
-int pbodyunitfindlcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,int *headindex)
+int pbodyunitFindLcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,int *headindex)
 {
   pbodyunit *origin[size];
   for(int i=0;i<size;i++){
     origin[i]=unitarr[i];
-    unitarr[i]=pbodyunitnext(unitarr[i]);
+    unitarr[i]=pbodyunitNext(unitarr[i]);
     mark[i]=1;
   }
   int lcpisempty=1;
@@ -360,7 +372,7 @@ int pbodyunitfindlcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,i
       if(mark[i]!=0){
 	for(j=i+1;j<size;j++){
 	  if(mark[j]!=0){
-	    int hascommon=_pbodyunitisequal(unitarr[i],unitarr[j]);
+	    int hascommon=_pbodyunitIsEqual(unitarr[i],unitarr[j]);
 	    if(hascommon){
 	      common=unitarr[i];
 	      if(lcpisempty==1) lcpisempty=0;
@@ -377,13 +389,13 @@ int pbodyunitfindlcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,i
   findeverycommon:
     for(int k=0;k<size;k++)
       if(k!=i || k!=j)
-	if(!(_pbodyunitisequal(common,unitarr[k])))
+	if(!(_pbodyunitIsEqual(common,unitarr[k])))
 	  mark[k]=0;
 
     //step 3 : for every list that has common pbodyunit, the list point to next pbodyunit
     for(int k=0;k<size;k++)
       if(mark[k]!=0)
-	unitarr[k]=pbodyunitnext(unitarr[k]);
+	unitarr[k]=pbodyunitNext(unitarr[k]);
   }
     
   //step 4 : restore the list that don't fit the prefix
@@ -391,7 +403,7 @@ int pbodyunitfindlcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,i
     if(mark[i]==0)
       unitarr[i]=origin[i];
     else
-      unitarr[i]=pbodyunitprev(unitarr[i]); //keep the consisant
+      unitarr[i]=pbodyunitPrev(unitarr[i]); //keep the consisant
   }
 
   if(lcpisempty==1) return 0;
@@ -404,12 +416,12 @@ int pbodyunitfindlcp(pbodyunit *unitarr[],int mark[],int size,pbodyunit **head,i
   return 0;
 }
 
-int pbodyunitfindleftrecursion(pbodyunit **unitarr,int mark[],int size,int head)
+int pbodyunitFindLeftRecursion(pbodyunit **unitarr,int mark[],int size,int head)
 {
   int res=0;
   bzero(mark,sizeof(int)*size);
   for(int i=0;i<size;i++){
-    pbodyunit *tmp=pbodyunitnext(unitarr[i]);
+    pbodyunit *tmp=pbodyunitNext(unitarr[i]);
     if(tmp->type==P_NONTERMINAL && tmp->value.index==head){
       mark[i]=1;
       res=1;
@@ -425,10 +437,10 @@ int pbodyunitfindleftrecursion(pbodyunit **unitarr,int mark[],int size,int head)
   3 : that pbodyunit has at least a nonterminal
   4 : other-map to S_TERMINALSET
 */
-int pbodyunitlisttype(pbodyunit *list)
+int pbodyunitListType(pbodyunit *list)
 {
-  pbodyunit* first=pbodyunitnext(list);
-  pbodyunit* second=pbodyunitnext(first);
+  pbodyunit* first=pbodyunitNext(list);
+  pbodyunit* second=pbodyunitNext(first);
 
   if(first->type==P_EMPTY && second->type==0) return 1;
   if(first->type==P_TERMINAL && second->type==0) return 2;
@@ -437,7 +449,7 @@ int pbodyunitlisttype(pbodyunit *list)
   for_each_pbodyunit(pos,list){
     if(pos->type==P_COMBINE){
       pbodyunit *nest=pos->value.nest;
-      int res=pbodyunitlisttype(nest);
+      int res=pbodyunitListType(nest);
       if(res==3) return 3;
     }
     else if(pos->type==P_NONTERMINAL)
@@ -446,7 +458,7 @@ int pbodyunitlisttype(pbodyunit *list)
   return 4;
 }
 
-re_node *pbodyunitbuildrenode(pbodyunit *u)
+re_node *pbodyunitBuildRenode(pbodyunit *u)
 {
   re_node *res=NULL;
   if(u->type==P_NONTERMINAL || u->type==P_TERMINAL || u->type==P_EMPTY)
@@ -454,27 +466,27 @@ re_node *pbodyunitbuildrenode(pbodyunit *u)
   else if(u->type==P_OR)
     res=createrenode(RE_OPERATOR,RE_OR);
   else if(u->type==P_COMBINE)
-    res=pbodyunitbuildretree(u->value.nest);
+    res=pbodyunitBuildRetree(u->value.nest);
   return res;
 }
 
 //don't consider the condition that have recursion
-re_node *pbodyunitbuildretree(pbodyunit *list)
+re_node *pbodyunitBuildRetree(pbodyunit *list)
 {
   re_node *res;
   re_node *leftnode=NULL,*rightnode=NULL;
   re_node *operator=NULL;
-  pbodyunit *pos=pbodyunitnext(list);
-  leftnode=res=pbodyunitbuildrenode(pos);
+  pbodyunit *pos=pbodyunitNext(list);
+  leftnode=res=pbodyunitBuildRenode(pos);
 
-  while((pos=pbodyunitnext(pos))!=list){
-    re_node *newnode=pbodyunitbuildrenode(pos);
+  while((pos=pbodyunitNext(pos))!=list){
+    re_node *newnode=pbodyunitBuildRenode(pos);
     //there are only 'or' operator in pbodyunit
     //so operator between pbodyunit is 'or' or 'cat'
     if(newnode->type==RE_OPERATOR){
       res=newnode;
-      pos=pbodyunitnext(pos);
-      rightnode=pbodyunitbuildrenode(pos);
+      pos=pbodyunitNext(pos);
+      rightnode=pbodyunitBuildRenode(pos);
       newnode->left=leftnode;
       newnode->right=rightnode;
       newnode->nodenum+=(leftnode->nodenum+rightnode->nodenum);
@@ -491,4 +503,29 @@ re_node *pbodyunitbuildretree(pbodyunit *list)
   }
   return res;
 }
+
+void pbodyunitAddParenthese(pbodyunit *list)
+{
+  pbodyunit *left=createPbodyunit(),*right=createPbodyunit();
+  left->type=P_LEFT;
+  right->type=P_RIGHT;
+  pbodyunitAdd(left,list);
+  pbodyunitAppend(right,list);
+}
+
+void elimatePbodyunitNest(pbodyunit *list)
+{
+  pbodyunit *tmp;
+  for(pbodyunit *pos=pbodyunitNext(list),*tmp=pbodyunitNext(pos);
+      pos!=list;
+      pos=tmp,tmp=pbodyunitNext(tmp)){
+    if(pos->type==P_COMBINE){
+      pbodyunit *nest=pos->value.nest;
+      elimatePbodyunitNest(nest);
+      pbodyunitAddParenthese(nest);
+      pbodyunitReplace(nest,pos);
+    }
+  }
+}
+
 #endif

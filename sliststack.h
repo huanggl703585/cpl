@@ -5,33 +5,34 @@
 
 typedef slist sliststack;
 
-sliststack *createsliststack();
-void sliststackpush(sliststack *stack,slist *new);
-void* sliststackpop(sliststack *stack);
+sliststack *createSliststack();
+void sliststackPush(sliststack *stack,slist *new);
+void* slistslistPop(sliststack *stack);
+void *getSliststackTop(sliststack *stack);
 
-sliststack *createsliststack()
+sliststack *createSliststack()
 {
-  initslist(ret,0);
+  slist_init(ret,0);
   return (sliststack*)ret;
 }
 
-void sliststackpush(sliststack *stack,slist *new)
+void sliststackPush(sliststack *stack,slist *new)
 {
-  initslist(padding,0);
-  appendslist(padding,stack);
-  slistreplace(padding,new);
+  slist_init(padding,0);
+  slist_append(padding,stack);
+  slist_replace(padding,new);
 }
 
-void* sliststackpop(sliststack *stack)
+void* sliststackPop(sliststack *stack)
 {
   slist *target=slist_last(stack);
   if(target==stack) return NULL;
   void* ret=target->key;
-  slist_del(target);
+  slist_drop(target);
   return ret;
 }
 
-void *getsliststacktop(sliststack *stack)
+void *getSliststackTop(sliststack *stack)
 {
   slist *target=slist_last(stack);
   if(target==stack) return NULL;

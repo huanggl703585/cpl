@@ -189,7 +189,7 @@ int isToken(symboltable *table,int id)
 void appendProdbodyByName(symboltable *table,productionbody *pbpos,char *str)
 {
   int id=searchSymbolIdByName(table,str);
-  appendprodbody(pbpos,id);
+  appendProdbody(pbpos,id);
 }
 
 //==========================================
@@ -240,6 +240,8 @@ void symbolSetMapper(symboltable *table);
 void _symbolSetMapper(symboltable *table,production *prod);
 void printSymbolMapper(symboltable *table);
 
+void symbolElimateNest(symboltable *table);
+
 //option==0 print in id order
 //option==1 print in toposort order
 void printProductionWithName(symboltable *table,int option);
@@ -276,6 +278,8 @@ void reformStructualProduction(symboltable *table)
   //symbolToposort(table);
   //printSymboltable(table,0);
   //printProductionWithName(table,0);
+  //TODO : UNTEST
+  symbolElimateNest(table);
 }
 
 void prodInUnit(symboltable *table)
@@ -354,36 +358,38 @@ void extractLeftLcpOne(symboltable *table,symbolitem *item)
     pbodyunit *lcphead;
     int headindex;
 
-    if(pbodyunitfindlcp(unitarr,mark,size,&lcphead,&headindex)==0)
+    if(pbodyunitFindLcp(unitarr,mark,size,&lcphead,&headindex)==0)
       return ;
   
     int newid=deriveNewSymbol(table,item);
     symbolitem *newitem=searchSymboltableById(table,newid);
     production *newprod=newitem->attr->attr.prod;
-    pbodyunit *newunit=createpbodyunit();
+    pbodyunit *newunit=createPbodyunit();
     newunit->type=P_NONTERMINAL;newunit->value.index=newid;
-    pbodyunit *lcp=pbodyunitcopy(lcphead,unitarr[headindex]);
-    pbodyunit *newbody=pbodyunitcopy(lcphead,unitarr[headindex]);
-    pbodyunitappend(newunit,newbody);
+    pbodyunit *lcp=pbodyunitCopy(lcphead,unitarr[headindex]);
+    pbodyunit *newbody=pbodyunitCopy(lcphead,unitarr[headindex]);
+    pbodyunitAppend(newunit,newbody);
     //printpbodyunit(lcp);
     //A-> alpha A` | beta
     //add new to A
-    productionbody *originnewbody=createprodbodylinkprod(prod);
+    productionbody *originnewbody=createProdbodyLinkProd(prod);
     originnewbody->unit=newbody;
     originnewbody->cnt=headindex+2;
-    //prodbodyappendpbodyunit(originnewbody,newunit);
+    //prodbodyappendPbodyunit(originnewbody,newunit);
     //delete A's prod, add prod to A`
     pbpos=prod->productionbody;
-    productionbody *pbtmp=prodbodynext(pbpos);
+    productionbody *pbtmp=prodbodyNext(pbpos);
     for(pt=0;pt<size;pt++){
       pbpos=pbtmp;
-      pbtmp=prodbodynext(pbtmp);
+      pbtmp=prodbodyNext(pbtmp);
       if(mark[pt]!=0){
-	if(!pbodyunitlistisempty(unitarr[pt])){
-	  productionbody *tmppb=createprodbodylinkprod(newprod);
-	  prodbodyappendpbodyunitlist(tmppb,unitarr[pt]);
+	if(!pbodyunitListIsEmpty(unitarr[pt])){
+	  productionbody *tmppb=createProdbodyLinkProd(newprod);
+	  prodbodyAppendPbodyunitList(tmppb,unitarr[pt]);
 	}
-	productiondrop(prod,pbpos);
+	else
+	  prodAppendEmptyProdbody(newprod);
+	productionDrop(prod,pbpos);
       }
     }
   }
@@ -416,31 +422,29 @@ void elimateLeftRecursionOne(symboltable *table,symbolitem *item)
     unitarr[pt++]=tmp;
   }
 
-  if(!(pbodyunitfindleftrecursion(unitarr,mark,pcnt,head)))
+  if(!(pbodyunitFindLeftRecursion(unitarr,mark,pcnt,head)))
     return ;
 
   int newid=deriveNewSymbol(table,item);
   symbolitem *newitem=searchSymboltableById(table,newid);
   production *newprod=newitem->attr->attr.prod;
-  pbodyunit *newunit=createpbodyunit();
+  pbodyunit *newunit=createPbodyunit();
   newunit->type=P_NONTERMINAL;newunit->value.index=newid;
   pt=0;
   prod_for_each_prodbody(pbpos,prod){
     if(mark[pt]==0)
-      prodbodyappendpbodyunit(pbpos,newunit);
+      prodbodyAppendPbodyunit(pbpos,newunit);
     else{
-      productionbody *tmppb=createprodbodylinkprod(newprod);
-      pbodyunit *liststart=pbodyunitnext(unitarr[pt]);
-      prodbodyappendpbodyunitlist(tmppb,liststart);
-      prodbodyappendpbodyunit(tmppb,newunit);
+      productionbody *tmppb=createProdbodyLinkProd(newprod);
+      pbodyunit *liststart=pbodyunitNext(unitarr[pt]);
+      prodbodyAppendPbodyunitList(tmppb,liststart);
+      prodbodyAppendPbodyunit(tmppb,newunit);
       
-      productiondrop(prod,pbpos);
+      productionDrop(prod,pbpos);
     }
     pt++;
   }
-  productionbody *emptyprod=createprodbodylinkprod(newprod);
-  pbodyunit *empty=createpbodyunitempty();
-  prodbodyappendpbodyunit(emptyprod,empty);
+  prodAppendEmptyProdbody(newprod);
 }
 
 /*
@@ -495,11 +499,11 @@ void _symbolSetMapper(symboltable *table,production *prod)
   charmapper *mapper=NULL;
   prod_for_each_prodbody(pbpos,prod){
     pbodyunit *u=pbpos->unit;
-    u=pbodyunitnext(u);
+    u=pbodyunitNext(u);
     int value=u->value.index;
     if(table->terminal[value]==NULL)
-      table->terminal[value]=createcharmapper(value);
-    charmapperappend(table->terminal[value],mapto);
+      table->terminal[value]=createCharmapper(value);
+    charmapperAppend(table->terminal[value],mapto);
   }
 }
 
@@ -508,7 +512,7 @@ void printSymbolMapper(symboltable *table)
   for(int i=0;i<table->bias;i++){
     charmapper *mapper=table->terminal[i];
     if(mapper!=NULL)
-      printcharmapper(table->terminal[i]);
+      printCharmapper(table->terminal[i]);
   }
 }
 
@@ -681,6 +685,23 @@ void symboltablePrintRetree(symboltable *table)
   }
 }
 
+//========================
+//used for structual grammar
+void symbolElimateNest(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
+    if(item->attr->type!=S_NONTERMINAL) continue;
+
+    production *prod=item->attr->attr.prod;
+    productionbody *pbpos;
+    prod_for_each_prodbody(pbpos,prod){
+      pbodyunit *list=pbpos->unit;
+      elimatePbodyunitNest(list);
+    }
+  }
+}
+
 //========================print/test
 
 void printProductionWithName(symboltable *table,int option)
@@ -704,7 +725,7 @@ void printProductionWithName(symboltable *table,int option)
     productionbody *pbpos;
     prod_for_each_prodbody(pbpos,prod){
       printf("cnt %d\n",pbpos->cnt);
-      printpbodyunit(pbpos->unit);
+      printPbodyunit(pbpos->unit);
     }
     printf("\n");
   }

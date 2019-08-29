@@ -6,80 +6,126 @@
 #include "tokenlist.h"
 #include "ast.h"
 
-//=======================build first set
-void buildfirst(symboltable *table);
-//return 1 if the firstset has added new
-int buildfirstone(symboltable *table,int id);
-//0 stands for empty
-int firstsethaveempty(symboltable *table,int id);
+#include <limits.h>
 
-void buildfirst(symboltable *table)
+#define EMPTY_SYMBOL INT_MAX
+
+#define setHaveEmpty(setsrc)			\
+  ((findset(setsrc,EMPTY_SYMBOL))!=0)
+
+//=======================build first set
+//set's element is symboltable's index
+void buildFirst(symboltable *table);
+void buildFirstTerminal(symboltable *table);
+//return 1 if the firstset has added new
+int buildFirstOne(symboltable *table,int id);
+int addFirstSet(symboltable *table,symbolitem *item,pbodyunit *list);
+pbodyunit *findFirstSymbol(symboltable *table,pbodyunit *list);
+//0 stands for empty
+int FirstsetHaveEmpty(symboltable *table,int id);
+
+void printFirstSet(symboltable *table);
+
+void buildFirst(symboltable *table)
 {
-  //int mark[table->count];
-  //bzero(mark,sizeof(int)*table->count);
+  buildFirstTerminal(table);
   int contine=1;
   while(contine){
     contine=0;
     for(int i=0;i<table->count;i++){
-      int tmp=buildfirstone(table,i+table->bias);
-      //mark[i]=tmp;
+      int tmp=buildFirstOne(table,i+table->bias);
       if(tmp!=0) contine=1;
     }
-    //for(int i=0;i<table->count;i++)
-    //  printf("%d ",mark[i]);
-    //printf("\n");
-    //bzero(mark,sizeof(int)*table->count);
+    printFirstSet(table);
   }
 }
 
-int buildfirstone(symboltable *table,int id)
+void buildFirstTerminal(symboltable *table)
 {
-  int ret=0;
-  symbolitem *item=searchsymboltablebyid(table,id);
-  set *target=item->attr->first;
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
+    if(item->attr->type!=S_TERMINAL) continue;
+
+    set *target=item->attr->first;
+    insertset(target,i+table->bias);
+    item->attr->first=target;
+    printset(target);
+  }
+}
+
+int buildFirstOne(symboltable *table,int id)
+{
+  symbolitem *item=searchSymboltableById(table,id);
+  if(item->attr->type==S_TERMINAL) return 0;
+  
   production *prod=item->attr->attr.prod;
   productionbody *pbpos;
-  prodbody_for_each(pbpos,prod){
-    pbody *pos;
-    pbody_for_each(pos,(pbpos->body)){
-      int key=getpbodykey(pos);
-      if(key<table->bias){
-	int tmp=insertset(target,key);
-	item->attr->first=target;
-	//printset(target);
-	//printf("tmp %d\n",tmp);
-	if(ret==0 && tmp!=0) ret=1;
-	break;
-      }
-      else{
-	symbolitem *srcitem=searchsymboltablebyid(table,key);
-	if(srcitem->attr->type==TERMINALSET){
-	  int tmp=insertset(target,key);
-	  item->attr->first=target;
-	  if(ret==0 && tmp!=0) ret=1;
-	  break;
-	}
-	else{
-	  set *src=srcitem->attr->first;
-	  int tmp=intersectset(&target,src);
-	  item->attr->first=target;
-	  if(ret==0 && tmp!=0) ret=1;
-	  if(firstsethaveempty(table,key)!=0)
-	    break;
-	}
-      }
+  int ret=0;
+  prod_for_each_prodbody(pbpos,prod){
+    pbodyunit *ulist=pbpos->unit;
+    int tmp=addFirstSet(table,item,ulist);
+    if(tmp!=0) ret=1;
+  }
+  return ret;
+}
+
+int addFirstSet(symboltable *table,symbolitem *item,pbodyunit *list)
+{
+  pbodyunit *firstsymbol; //the first symbol that FIRST() has no empty
+  firstsymbol=findFirstSymbol(table,list);
+  if(firstsymbol==NULL) firstsymbol=list;
+  else firstsymbol=pbodyunitNext(firstsymbol);
+
+  int ret=0,tmp;
+  set *target=item->attr->first;
+  //symbol between (list, firstsymbol) is aviliable
+  for(pbodyunit *pos=pbodyunitNext(list);pos!=firstsymbol;pos=pbodyunitNext(pos)){
+    if(pos->type==P_NONTERMINAL){
+      int index=pos->value.index;
+      symbolitem *item=searchSymboltableById(table,index);
+      set *src=item->attr->first;
+      tmp=intersectset(&target,src);
+      item->attr->first=target;
+      if(tmp!=0) ret=1;
+    }
+    else if(pos->type==P_TERMINAL){
+      int index=pos->value.index;
+      tmp=insertset(target,index);
+      item->attr->first=target;
+      if(tmp!=0) ret=1;
     }
   }
   return ret;
 }
 
-int firstsethaveempty(symboltable *table,int id)
+//find the first symbol that FIRST() has no empty
+pbodyunit *findFirstSymbol(symboltable *table,pbodyunit *list)
 {
-  symbolitem *item=searchsymboltablebyid(table,id);
-  set *firstset=item->attr->first;
-  return findset(firstset,0);
+  pbodyunit *pos;
+  for_each_pbodyunit(pos,list){
+    if(pos->type==P_NONTERMINAL){
+      int index=pos->value.index;
+      symbolitem *item=searchSymboltableById(table,index);
+      set *first=item->attr->first;
+      if(!setHaveEmpty(first)) return pos;
+    }
+    else if(pos->type==P_TERMINAL){
+      return pos;
+    }
+  }
+  return NULL;
 }
 
+void printFirstSet(symboltable *table)
+{
+  for(int i=0;i<table->count;i++){
+    symbolitem *item=searchSymboltableById(table,i+table->bias);
+    set *target=item->attr->first;
+    printset(target);
+  }
+}
+
+/*
 //=============================build follow set
 
 void buildfollow(symboltable *table,int startid);
@@ -324,4 +370,5 @@ ast* LL1parsing(tokenlist *tlist)
   }
   return ast;
 }
+*/
 #endif

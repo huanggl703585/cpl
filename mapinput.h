@@ -10,27 +10,30 @@
 
 typedef slist charmapper;
 
-#define initcharmapper(name,_key)			       \
-  initslist(name,_key)
+#define initCharmapper(name,_key)			       \
+  slist_init(name,_key)
 
-#define charmapperappend(listhead,_key)				\
+#define charmapperAppend(listhead,_key)				\
   do{								\
-    initcharmapper(__tmp,_key);					\
-    appendslist(__tmp,listhead);				\
+    initCharmapper(__tmp,_key);					\
+    slist_append(__tmp,listhead);				\
   }while(0)
 
 #define for_each_charmapper(pos,listhead)		\
   list_for_each_entry(pos,&(listhead->list),list)
 
-charmapper *createcharmapper(int self)
+charmapper *createCharmapper(int self);
+void printCharmapper(charmapper *mapper);
+
+charmapper *createCharmapper(int self)
 {
-  initcharmapper(ret,NULL);
-  charmapperappend(ret,self);
+  initCharmapper(ret,NULL);
+  charmapperAppend(ret,self);
   return ret;
 }
 
-void printcharmapper(charmapper *mapper)
+void printCharmapper(charmapper *mapper)
 {
-  printslist(mapper);
+  slist_print(mapper);
 }
 #endif

@@ -1,39 +1,42 @@
 #ifndef __AST_H
 #define __AST_H
 
+#include "tokenlist.h"
 #include "symboltable.h"
 
 typedef struct ast ast;
 typedef struct astnode astnode;
 
 struct ast{
-  symboltable *table;
+  symboltable *stable;
+  symboltable *gtable;
   astnode *root;
 };
 
 struct astnode{
-  int index;
+  token *token;
   int childcnt;
   astnode **child;
 };
 
-ast *createast(symboltable *table);
-astnode *createastnode(int index);
-void initast(ast *tree,int start);
-void expandast(astnode *node,pbody *body);
+ast *createAst(tokenlist *tlist);
+astnode *createAstNode(token *t);
+void initAst(ast *tree,int start);
+void expandAst(astnode *node,productionbody *prodbody);
 
-ast *createast(symboltable *table)
+ast *createast(tokenlist *tlist)
 {
   ast *ret=(ast*)malloc(sizeof(ast));
-  ret->table=table;
+  ret->stable=tlist->stable;
+  ret->gtable=tlist->gtable;
   ret->root=NULL;
   return NULL;
 }
 
-astnode *createastnode(int index)
+astnode *createastnode(token *t)
 {
   astnode *ret=(astnode*)malloc(sizeof(astnode));
-  ret->index=index;
+  ret->token=t;
   ret->childcnt=0;
   ret->child=NULL;
   return ret;
@@ -41,24 +44,13 @@ astnode *createastnode(int index)
 
 void initast(ast *tree,int start)
 {
-  astnode *root=createastnode(start);
-  tree->root=root;
+  //astnode *root=createastnode(start);
+  //tree->root=root;
 }
 
-void expandast(astnode *node,pbody *body)
+void expandast(astnode *node,productionbody *prodbody)
 {
-  pbody *pos;
-  int cnt=0;
-  pbody_for_each(pos,body){
-    cnt++;
-  }
-  node->child=(astnode**)malloc(sizeof(astnode*)*cnt);
-  int pt=0;
-  pbody_for_each(pos,body){
-    int key=getpbodykey(pos);
-    astnode *tmp=createastnode(key);
-    node->child[pt++]=tmp;
-  }
+  
 }
 
 #endif
