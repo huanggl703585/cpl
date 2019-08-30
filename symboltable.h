@@ -25,6 +25,7 @@ struct symboltable{
   int *idarray;
   int *toposort;
   int topofirst;
+  int start;
   symbolitem **table;   //it stores non-terminal
   charmapper **terminal;//it stores terminal
   symboltableoption option;

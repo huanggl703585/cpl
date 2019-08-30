@@ -43,6 +43,7 @@ void buildMetaLexcialGrammar()
   array[pt++]=insertSymboltable(table,"digit",NULL);
   array[pt++]=insertSymboltable(table,"alpha",NULL);
   meta_lexcial_grammar.start=array[0];
+  table->start=array[0];
   
   symbolitem* spos;
   production* ppos;
@@ -157,6 +158,7 @@ void  buildMetaStructualGrammar()
   array[pt++]=insertSymboltable(table,"head",NULL);
   array[pt++]=insertSymboltable(table,"body",NULL);
   meta_lexcial_grammar.start=array[0];
+  table->start=array[0];
 
   symbolitem* spos;
   production* ppos;
@@ -206,20 +208,22 @@ void  buildMetaStructualGrammar()
   spos=searchSymboltableById(table,dstid);
   spos->attr->attr.prod=createProduction(dstid);
   ppos=spos->attr->attr.prod;
-  pbpos=createProdbodyLinkProd(ppos);
   kvpair *kvpos;
   //printf("%d %d\n",srcid,dstid);
   for_each_kvpair(kvpos,map){
     if((int)(kvpos->value)==dstid) continue;
+    pbpos=createProdbodyLinkProd(ppos);
     appendProdbody(pbpos,(int)(kvpos->value));
     //printf("%d ",(int)(kvpos->value));
   }
-
   //printSymboltable(table,0);
   reformStructualProduction(table);
   //printProductionWithName(table,0);
-  
+
   buildFirst(table);
+  buildFollow(table);
+  printFirstSet(table);
+  printFollowSet(table);
 }
 
 //return a map from src(key) to dst(value)
@@ -238,8 +242,9 @@ kvpair *copyTokentable(grammar *src,symboltable *dst)
     pbodyunit *ppos;
     for_each_pbodyunit(ppos,phead){
       kvpair *pair=_copyTokentable(src->table,ppos,dst);
-      if(kvpairishead(pair))
+      if(kvpairishead(pair)){
 	intkvpairlistinsert(ret,pair);
+      }
       else
 	_intkvpairinsert(ret,pair);
     }

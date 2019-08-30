@@ -67,3 +67,12 @@ _body ::= body
 
 _start ::= production _start
        ::= empty
+
+0 token
+1-6 six nonterminal
+7 start
+8 production
+9 head
+10 body
+11 _body
+12 _start
